@@ -1,6 +1,6 @@
 class ApiService {
   constructor() {
-    this.baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api/v1';
+    this.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
     this.token = localStorage.getItem('token');
   }
 

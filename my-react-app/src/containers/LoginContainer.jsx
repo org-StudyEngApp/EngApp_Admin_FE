@@ -15,7 +15,7 @@ const LoginContainer = () => {
     console.log("Form data:", formData);
 
     try {
-      const response = await fetch("http://localhost:8080/api/v1/auth/login", {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

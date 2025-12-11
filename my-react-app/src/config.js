@@ -10,7 +10,7 @@
 // src/config.js (Updated for Vite)
 
 // API Base URL - use import.meta.env to access VITE_ variables
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
 // Other environment variables (example)
 export const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
