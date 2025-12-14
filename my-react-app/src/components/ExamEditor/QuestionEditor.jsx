@@ -9,7 +9,7 @@ import {
   Play,
   Pause
 } from 'lucide-react';
-import CloudinaryService from '../../services/CloudinaryService';
+import AzureStorageService from '../../services/AzureStorageService';
 
 const QuestionEditor = ({
   question,
@@ -32,10 +32,10 @@ const QuestionEditor = ({
   useEffect(() => {
     return () => {
       if (imagePreview && imagePreview.startsWith('blob:')) {
-        CloudinaryService.revokePreviewUrl(imagePreview);
+        AzureStorageService.revokePreviewUrl(imagePreview);
       }
       if (audioPreview && audioPreview.startsWith('blob:')) {
-        CloudinaryService.revokePreviewUrl(audioPreview);
+        AzureStorageService.revokePreviewUrl(audioPreview);
       }
     };
   }, [imagePreview, audioPreview]);
@@ -46,10 +46,10 @@ const QuestionEditor = ({
 
     try {
       // Validate file trước khi upload
-      CloudinaryService.validateFile(file, 'image');
+      AzureStorageService.validateFile(file, 'image');
       
       // Tạo preview URL cho UX tốt hơn
-      const previewUrl = CloudinaryService.generatePreviewUrl(file);
+      const previewUrl = AzureStorageService.generatePreviewUrl(file);
       setImagePreview(previewUrl);
       
       // Gửi file lên để xử lý
@@ -66,10 +66,10 @@ const QuestionEditor = ({
 
     try {
       // Validate file trước khi upload
-      CloudinaryService.validateFile(file, 'audio');
+      AzureStorageService.validateFile(file, 'audio');
       
       // Tạo preview URL cho UX tốt hơn
-      const previewUrl = CloudinaryService.generatePreviewUrl(file);
+      const previewUrl = AzureStorageService.generatePreviewUrl(file);
       setAudioPreview(previewUrl);
       
       // Gửi file lên để xử lý
@@ -82,7 +82,7 @@ const QuestionEditor = ({
 
   const removeImage = () => {
     if (imagePreview && imagePreview.startsWith('blob:')) {
-      CloudinaryService.revokePreviewUrl(imagePreview);
+      AzureStorageService.revokePreviewUrl(imagePreview);
     }
     setImagePreview(null);
     onUpdateQuestion(questionIndex, 'imageUrl', null);
@@ -90,7 +90,7 @@ const QuestionEditor = ({
 
   const removeAudio = () => {
     if (audioPreview && audioPreview.startsWith('blob:')) {
-      CloudinaryService.revokePreviewUrl(audioPreview);
+      AzureStorageService.revokePreviewUrl(audioPreview);
     }
     setAudioPreview(null);
     setIsPlaying(false);

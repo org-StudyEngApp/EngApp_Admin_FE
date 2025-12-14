@@ -1,5 +1,5 @@
 import axios from 'axios';
-import CloudinaryService from './CloudinaryService';
+import AzureStorageService from './AzureStorageService';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
@@ -156,7 +156,7 @@ const AdminExamService = {
 
   uploadFileAndUpdateQuestion: async (questionId, file, fileType) => {
   try {
-    console.log(`Bắt đầu upload ${fileType} lên Cloudinary cho câu hỏi:`, questionId);
+    console.log(`Bắt đầu upload ${fileType} lên Azure Storage cho câu hỏi:`, questionId);
 
     // Tạo form data
     const formData = new FormData();
@@ -176,7 +176,7 @@ const AdminExamService = {
 
     console.log(`Sử dụng endpoint: ${endpoint}`);
 
-    // Gửi request lên backend (đã có middleware update Cloudinary)
+    // Gửi request lên backend (đã có middleware update Azure Storage)
   const response = await api.post(endpoint, formData);
 
     console.log(`Upload ${fileType} và cập nhật câu hỏi thành công:`, response.data);

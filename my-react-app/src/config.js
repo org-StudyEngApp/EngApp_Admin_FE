@@ -12,8 +12,11 @@
 // API Base URL - use import.meta.env to access VITE_ variables
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
-// Other environment variables (example)
-export const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+// Azure Storage Configuration
+export const AZURE_STORAGE_CONNECTION_STRING = import.meta.env.VITE_AZURE_STORAGE_CONNECTION_STRING;
+export const AZURE_STORAGE_CONTAINER_NAME = import.meta.env.VITE_AZURE_STORAGE_CONTAINER_NAME;
+
+// TinyMCE API Key
 export const TINYMCE_API_KEY = import.meta.env.VITE_TINYMCE_API_KEY;
 
 // Other global configuration constants
