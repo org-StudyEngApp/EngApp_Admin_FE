@@ -9,10 +9,6 @@ import ExamDetail from "./pages/Exam/ExamDetail";
 import UserDetail from './pages/user/UserDetails';
 import UserEdit from './pages/user/UserEdit';
 
-// Import course management components
-import CourseList from "./pages/Admin/CourseList";
-import CourseEditor from "./pages/Admin/CourseEditor";
-
 // Thêm vào file routes hoặc menu của ứng dụng
 import NotificationManagement from './pages/NotificationManagement';
 
@@ -29,6 +25,11 @@ import CreateBlog from "./pages/blog/CreateBlog";
 
 // Import User Management components
 import UserList from "./pages/user/UserList";
+
+// Import AdminNews components
+import ArticleList from "./pages/AdminNews/ArticleList";
+import ArticleEditor from "./pages/AdminNews/ArticleEditor";
+import TopicManager from "./pages/Admin/TopicManager";
 
 
 
@@ -136,32 +137,6 @@ function App() {
           }
         />
 
-        {/* Course Management Routes */}
-        <Route
-          path="/admin/courses"
-          element={
-            <AdminLayout title="Quản lý khóa học">
-              <CourseList />
-            </AdminLayout>
-          }
-        />
-        <Route
-          path="/admin/courses/new"
-          element={
-            <AdminLayout title="Tạo khóa học mới">
-              <CourseEditor />
-            </AdminLayout>
-          }
-        />
-        <Route
-          path="/admin/courses/:id/edit"
-          element={
-            <AdminLayout title="Chỉnh sửa khóa học">
-              <CourseEditor />
-            </AdminLayout>
-          }
-        />
-
         {/* Flash Card Management Routes */}
         <Route
           path="/admin/flashcards"
@@ -218,6 +193,42 @@ function App() {
           element={
             <AdminLayout title="Chỉnh sửa bài viết">
               <CreateBlog />
+            </AdminLayout>
+          }
+        />
+
+        {/* Article/News Management Routes */}
+        <Route
+          path="/admin/articles"
+          element={
+            <AdminLayout title="Quản lý Bài báo">
+              <ArticleList />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/articles/create"
+          element={
+            <AdminLayout title="Soạn thảo Bài báo mới">
+              <ArticleEditor />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/articles/:id/edit"
+          element={
+            <AdminLayout title="Chỉnh sửa Bài báo">
+              <ArticleEditor />
+            </AdminLayout>
+          }
+        />
+
+        {/* Topic Management Route */}
+        <Route
+          path="/admin/topics"
+          element={
+            <AdminLayout title="Quản lý Chủ đề">
+              <TopicManager />
             </AdminLayout>
           }
         />

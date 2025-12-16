@@ -15,7 +15,6 @@ const Sidebar = () => {
   const menuItems = [
     { path: '/admin', icon: Home, label: 'Dashboard' },
     { path: '/admin/exams', icon: FileText, label: 'Quản lý đề thi' },
-    { path: '/admin/courses', icon: BookOpen, label: 'Khóa học' },
     { path: '/admin/users', icon: Users, label: 'Người dùng' },
     { path: '/admin/analytics', icon: BarChart3, label: 'Thống kê' },
     { path: '/admin/settings', icon: Settings, label: 'Cài đặt' },

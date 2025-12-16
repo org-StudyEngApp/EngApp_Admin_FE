@@ -14,24 +14,20 @@ import {
 } from 'lucide-react';
 import userApi from '../api/userApi';
 import blogApi from '../api/blogApi';
-import courseApi from '../api/courseApi';
 import AdminExamService from '../services/AdminExamService';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalExams: 0,
-    totalCourses: 0,
     todayTests: 0,
     userGrowth: 0,
     examGrowth: 0,
-    courseGrowth: 0,
     testGrowth: 0
   });
   
   const [loading, setLoading] = useState(true);
   const [userStats, setUserStats] = useState(null);
-  const [courseStats, setCourseStats] = useState(null);
 
   // Fetch dashboard data
   useEffect(() => {
@@ -60,23 +56,6 @@ const Dashboard = () => {
           console.error('Error fetching exams:', error);
         }
         
-        // Fetch courses data
-        let coursesData = { totalElements: 0 };
-        try {
-          coursesData = await courseApi.getAllCoursesAdmin({ page: 0, size: 1 });
-        } catch (error) {
-          console.error('Error fetching courses:', error);
-        }
-
-        // Fetch course stats
-        let courseStatsData = null;
-        try {
-          courseStatsData = await courseApi.getCourseStats();
-          setCourseStats(courseStatsData);
-        } catch (error) {
-          console.error('Error fetching course stats:', error);
-        }
-        
         // Calculate today's tests (exams created today)
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -92,11 +71,9 @@ const Dashboard = () => {
         setStats({
           totalUsers: usersData?.totalElements || userStatsData?.overview?.totalUsers || 0,
           totalExams: Array.isArray(examsData) ? examsData.length : 0,
-          totalCourses: coursesData?.totalElements || courseStatsData?.totalCourses || 0,
           todayTests: todayTests,
           userGrowth: 12, // Có thể tính từ user stats nếu có data
           examGrowth: 8,
-          courseGrowth: 23,
           testGrowth: -5
         });
         
@@ -138,15 +115,6 @@ const Dashboard = () => {
       time: '1 giờ trước',
       icon: <Award size={16} />,
       color: 'purple'
-    },
-    {
-      id: 4,
-      type: 'course_updated',
-      title: 'Khóa học "Ngữ pháp cơ bản" đã được cập nhật',
-      user: 'Admin User',
-      time: '2 giờ trước',
-      icon: <BookOpen size={16} />,
-      color: 'orange'
     }
   ];
 
@@ -164,13 +132,6 @@ const Dashboard = () => {
       icon: <Eye size={20} />,
       color: 'green',
       path: '/admin/blogs'
-    },
-    {
-      title: 'Tạo khóa học',
-      description: 'Tạo khóa học mới',
-      icon: <BookOpen size={20} />,
-      color: 'purple',
-      path: '/admin/courses/create'
     },
     {
       title: 'Xem thống kê',
@@ -248,14 +209,6 @@ const Dashboard = () => {
       changeType: stats.examGrowth >= 0 ? 'increase' : 'decrease',
       icon: <FileText size={24} />,
       color: 'green'
-    },
-    {
-      title: 'Khóa học',
-      value: loading ? '...' : stats.totalCourses.toString(),
-      change: `${stats.courseGrowth > 0 ? '+' : ''}${stats.courseGrowth}%`,
-      changeType: stats.courseGrowth >= 0 ? 'increase' : 'decrease',
-      icon: <BookOpen size={24} />,
-      color: 'purple'
     },
     {
       title: 'Lượt thi hôm nay',

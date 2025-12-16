@@ -77,28 +77,28 @@ const BlogList = () => {
         size: pageSize
       });
 
-      const data = response.data;
-      console.log('API Response Data:', data);
-      console.log('Posts content:', data.content);
+      // axiosClient đã unwrap response, nên response trực tiếp là data
+      console.log('API Response:', response);
+      console.log('Posts content:', response.content);
 
-      if (data.content) {
-        setBlogs(data.content);
-        setTotalPages(data.totalPages);
-        setTotalElements(data.totalElements);
-        setCurrentPage(data.number);
+      if (response && response.content) {
+        setBlogs(response.content);
+        setTotalPages(response.totalPages);
+        setTotalElements(response.totalElements);
+        setCurrentPage(response.number);
       } else {
         setBlogs([]);
         setTotalPages(0);
         setTotalElements(0);
       }
 
-      // Fetch blog statistics
-      const statsResponse = await blogApi.getBlogStatistics();
-      setStatistics(statsResponse.data);
+      // Fetch blog statistics - axiosClient đã unwrap
+      const stats = await blogApi.getBlogStatistics();
+      setStatistics(stats);
 
-      // Fetch categories
-      const categoriesResponse = await blogApi.getAllCategories();
-      setCategories(categoriesResponse.data);
+      // Fetch categories - axiosClient đã unwrap
+      const categoriesData = await blogApi.getAllCategories();
+      setCategories(categoriesData);
     } catch (error) {
       console.error('Lỗi khi tải dữ liệu blog:', error);
       setError(error.response?.data?.message || error.message || 'Có lỗi xảy ra khi tải dữ liệu');
@@ -171,8 +171,8 @@ const BlogList = () => {
       setShowCategoryModal(false);
       
       // Fetch updated categories
-      const categoriesResponse = await blogApi.getAllCategories();
-      setCategories(categoriesResponse.data);
+      const categoriesData = await blogApi.getAllCategories();
+      setCategories(categoriesData);
     } catch (error) {
       console.error('Lỗi khi lưu danh mục:', error);
       alert('Có lỗi xảy ra khi lưu danh mục');
@@ -194,8 +194,8 @@ const BlogList = () => {
         await blogApi.deleteCategory(categoryId);
         
         // Fetch updated categories
-        const categoriesResponse = await blogApi.getAllCategories();
-        setCategories(categoriesResponse.data);
+        const categoriesData = await blogApi.getAllCategories();
+        setCategories(categoriesData);
         alert('Xóa danh mục thành công');
       } catch (error) {
         console.error('Lỗi khi xóa danh mục:', error);

@@ -15,6 +15,8 @@ import {
   User,
   CreditCard, // Icon cho Flash Card
   Edit3, // Icon cho Blog
+  Newspaper, // Icon cho Articles/News
+  FolderOpen, // Icon cho Topics
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -22,9 +24,9 @@ const Sidebar = () => {
   const [expandedMenus, setExpandedMenus] = useState({
     tests: true,
     users: false,
-    courses: false,
     flashcards: false,
     blogs: false,
+    articles: false,
   });
 
   const toggleMenu = (menu) => {
@@ -76,18 +78,6 @@ const Sidebar = () => {
       ],
     },
     {
-      title: "Quản lý khóa học",
-      icon: <BookOpen size={20} />,
-      key: "courses",
-      submenu: [
-        {
-          title: "Danh sách khóa học",
-          icon: <List size={16} />,
-          path: "/admin/courses",
-        }
-      ],
-    },
-    {
       title: "Quản lý Flash Card",
       icon: <CreditCard size={20} />,
       key: "flashcards",
@@ -120,6 +110,28 @@ const Sidebar = () => {
           title: "Tạo bài viết mới",
           icon: <PlusCircle size={16} />,
           path: "/admin/blogs/create",
+        },
+      ],
+    },
+    {
+      title: "Quản lý Bài báo",
+      icon: <Newspaper size={20} />,
+      key: "articles",
+      submenu: [
+        {
+          title: "Danh sách bài báo",
+          icon: <List size={16} />,
+          path: "/admin/articles",
+        },
+        {
+          title: "Soạn thảo bài mới",
+          icon: <PlusCircle size={16} />,
+          path: "/admin/articles/create",
+        },
+        {
+          title: "Quản lý Chủ đề",
+          icon: <FolderOpen size={16} />,
+          path: "/admin/topics",
         },
       ],
     },

@@ -13,10 +13,11 @@ const CreateFlashCard = () => {
     title: '',
     description: '',
     category: '',
-    cards: [{ term: '', definition: '', example: '', imageUrl: '' }]
+    cards: [{ term: '', definition: '', example: '', imageUrl: '', audioUrl: '' }]
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [fetchingAudio, setFetchingAudio] = useState({});
 
   // Quick add vocabulary templates
   const quickAddTemplates = [
@@ -51,8 +52,9 @@ const CreateFlashCard = () => {
           term: card.term || '',
           definition: card.definition || '',
           example: card.example || '',
-          imageUrl: card.imageUrl || ''
-        })) : [{ term: '', definition: '', example: '', imageUrl: '' }]
+          imageUrl: card.imageUrl || '',
+          audioUrl: card.audioUrl || ''
+        })) : [{ term: '', definition: '', example: '', imageUrl: '', audioUrl: '' }]
       });
     } catch (error) {
       console.error('Lỗi khi tải flashcard set:', error);
@@ -65,8 +67,78 @@ const CreateFlashCard = () => {
   const addCard = () => {
     setFlashCardSet({
       ...flashCardSet,
-      cards: [...flashCardSet.cards, { term: '', definition: '', example: '', imageUrl: '' }]
+      cards: [...flashCardSet.cards, { term: '', definition: '', example: '', imageUrl: '', audioUrl: '' }]
     });
+  };
+
+  // Fetch audio from Dictionary API
+  const fetchAudioFromDictionary = async (term) => {
+    if (!term || !term.trim()) return null;
+    
+    try {
+      const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${term.trim()}`);
+      
+      if (!response.ok) {
+        console.warn(`No audio found for term: ${term}`);
+        return null;
+      }
+      
+      const data = await response.json();
+      
+      // Parse response to get audio URL
+      if (data && data.length > 0) {
+        const entry = data[0];
+        
+        // Try to find audio in phonetics
+        if (entry.phonetics && entry.phonetics.length > 0) {
+          for (const phonetic of entry.phonetics) {
+            if (phonetic.audio) {
+              // Prefer audio with specific accents
+              if (phonetic.audio.includes('-us.mp3') || phonetic.audio.includes('-uk.mp3')) {
+                return phonetic.audio;
+              }
+            }
+          }
+          
+          // If no specific accent found, return first available audio
+          const firstAudio = entry.phonetics.find(p => p.audio);
+          if (firstAudio && firstAudio.audio) {
+            return firstAudio.audio;
+          }
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error(`Error fetching audio for ${term}:`, error);
+      return null;
+    }
+  };
+
+  // Fetch audio for a specific card
+  const fetchAudioForCard = async (index) => {
+    const card = flashCardSet.cards[index];
+    if (!card.term || card.term.trim() === '') {
+      alert('Vui lòng nhập từ tiếng Anh trước khi lấy audio');
+      return;
+    }
+
+    setFetchingAudio(prev => ({ ...prev, [index]: true }));
+    
+    try {
+      const audioUrl = await fetchAudioFromDictionary(card.term);
+      
+      if (audioUrl) {
+        updateCard(index, 'audioUrl', audioUrl);
+        alert('Đã lấy audio thành công!');
+      } else {
+        alert('Không tìm thấy audio cho từ này. Bạn có thể thêm URL audio thủ công.');
+      }
+    } catch (error) {
+      alert('Có lỗi xảy ra khi lấy audio');
+    } finally {
+      setFetchingAudio(prev => ({ ...prev, [index]: false }));
+    }
   };
 
   const removeCard = (index) => {
@@ -121,16 +193,32 @@ const CreateFlashCard = () => {
     try {
       setSaving(true);
       
+      // Auto-fetch audio for cards without audioUrl
+      const cardsWithAudio = await Promise.all(
+        validCards.map(async (card) => {
+          let audioUrl = card.audioUrl?.trim() || null;
+          
+          // If audioUrl is empty or null, try to fetch from Dictionary API
+          if (!audioUrl && card.term?.trim()) {
+            console.log(`Fetching audio for: ${card.term}`);
+            audioUrl = await fetchAudioFromDictionary(card.term);
+          }
+          
+          return {
+            term: card.term?.trim(),
+            definition: card.definition?.trim(),
+            example: card.example?.trim() || '',
+            imageUrl: card.imageUrl?.trim() || '',
+            audioUrl: audioUrl || null
+          };
+        })
+      );
+      
       const payload = {
         title: flashCardSet.title.trim(),
         description: flashCardSet.description.trim(),
         category: flashCardSet.category,
-        cards: validCards.map(card => ({
-          term: card.term?.trim(),
-          definition: card.definition?.trim(),
-          example: card.example?.trim() || '',
-          imageUrl: card.imageUrl?.trim() || ''
-        }))
+        cards: cardsWithAudio
       };
 
       if (isEdit) {
@@ -307,6 +395,41 @@ const CreateFlashCard = () => {
                           disabled={isView}
                         />
                       </div>
+                    </div>
+                    
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Audio URL (tự động lấy nếu để trống)
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={card.audioUrl || ''}
+                          onChange={(e) => updateCard(index, 'audioUrl', e.target.value)}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="https://api.dictionaryapi.dev/media/pronunciations/..."
+                          disabled={isView}
+                        />
+                        {!isView && (
+                          <button
+                            type="button"
+                            onClick={() => fetchAudioForCard(index)}
+                            disabled={fetchingAudio[index] || !card.term}
+                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            title="Lấy audio từ Dictionary API"
+                          >
+                            {fetchingAudio[index] ? 'Đang lấy...' : '🔊 Lấy Audio'}
+                          </button>
+                        )}
+                      </div>
+                      {card.audioUrl && (
+                        <div className="mt-2">
+                          <audio controls className="w-full h-8">
+                            <source src={card.audioUrl} type="audio/mpeg" />
+                            Trình duyệt không hỗ trợ audio
+                          </audio>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

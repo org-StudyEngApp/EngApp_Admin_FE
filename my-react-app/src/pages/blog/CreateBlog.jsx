@@ -55,8 +55,8 @@ const CreateBlog = () => {
         const formData = new FormData();
         formData.append('file', blobInfo.blob(), blobInfo.filename());
         
-        const response = await blogApi.uploadImage(formData.get('file'));
-        success(response.data.url);
+        const imageUrl = await blogApi.uploadImage(formData.get('file'));
+        success(imageUrl);
       } catch (error) {
         failure('Image upload failed: ' + error.message);
       }
@@ -112,8 +112,7 @@ const CreateBlog = () => {
         setLoading(true);
         
         try {
-          const response = await blogApi.getPostById(id);
-          const postData = response.data;
+          const postData = await blogApi.getPostById(id);
           
           console.log('Fetched post data:', postData);
           
@@ -161,8 +160,8 @@ const CreateBlog = () => {
       // Handle image upload
       if (blog.featuredImage && blog.featuredImage instanceof File) {
         try {
-          const imageResponse = await blogApi.uploadImage(blog.featuredImage);
-          postData.featuredImage = imageResponse.data.url;
+          const imageUrl = await blogApi.uploadImage(blog.featuredImage);
+          postData.featuredImage = imageUrl;
         } catch (imageError) {
           console.error('Lỗi upload ảnh:', imageError);
         }
@@ -283,7 +282,7 @@ const CreateBlog = () => {
                   Nội dung <span className="text-red-500">*</span>
                 </label>
                 <Editor
-                  apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
+                  apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
                   value={blog.content}
                   onEditorChange={(content) => setBlog({ ...blog, content })}
                   init={editorConfig}

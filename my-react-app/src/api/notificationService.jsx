@@ -4,7 +4,7 @@ import axiosClient from './axiosClient'; // Use the existing axios client
 
 // Tạo axios instance
 const notificationApi = axios.create({
-  baseURL: `${API_BASE_URL}/api/v1/notifications`,
+  baseURL: `${API_BASE_URL}/notifications`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -30,7 +30,7 @@ export const notificationService = {
   sendSystemNotification: async (notificationData) => {
     try {
       // Sử dụng axiosClient để đảm bảo token được gửi đúng cách
-      const response = await axiosClient.post('/api/v1/notifications/system', notificationData);
+      const response = await axiosClient.post('/notifications/system', notificationData);
       return response.data;
     } catch (error) {
       console.error('Error sending notification:', error);
@@ -42,7 +42,7 @@ export const notificationService = {
   getUsersForNotification: async () => {
     try {
       // Use axiosClient instead of axios directly for consistent authentication
-      const response = await axiosClient.get('/api/v1/admin/users');
+      const response = await axiosClient.get('/admin/users');
       console.log('API response:', response.data); // Debug log
       
       // Kiểm tra cấu trúc dữ liệu và trích xuất mảng users

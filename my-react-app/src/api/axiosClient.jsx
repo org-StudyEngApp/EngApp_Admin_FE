@@ -9,6 +9,15 @@ const axiosClient = axios.create({
   },
 });
 
+// Axios instance rieng cho crawl operations (timeout dai hon)
+export const axiosClientForCrawl = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api/v1",
+  timeout: 60000, // 60 seconds for crawl operations
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
 // Request interceptor
 axiosClient.interceptors.request.use(
   (config) => {
@@ -71,6 +80,50 @@ axiosClient.interceptors.response.use(
       }
     }
 
+    return Promise.reject(error);
+  }
+);
+
+// Apply same interceptors to crawl client
+axiosClientForCrawl.interceptors.request.use(
+  (config) => {
+    const token =
+      localStorage.getItem("accessToken") ||
+      localStorage.getItem("token") ||
+      localStorage.getItem("adminToken");
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    console.log("Crawl Request:", config.method?.toUpperCase(), config.url);
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+axiosClientForCrawl.interceptors.response.use(
+  (response) => {
+    console.log("Crawl Response:", response.status, response.config.url);
+    
+    if (response.data && response.data.code === 1000 && response.data.result !== undefined) {
+      return response.data.result;
+    }
+    
+    return response.data || response;
+  },
+  (error) => {
+    console.error("Crawl Error:", error.response?.status, error.message);
+    
+    if (error.response?.status === 401) {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("token");
+      localStorage.removeItem("adminToken");
+      window.location.href = "/login";
+    }
+    
     return Promise.reject(error);
   }
 );
