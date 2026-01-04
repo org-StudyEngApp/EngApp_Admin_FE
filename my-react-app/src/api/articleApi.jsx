@@ -1,6 +1,8 @@
 import axiosClient, { axiosClientForCrawl } from './axiosClient';
 
 const articleApi = {
+  // ==================== UTILITY APIs ====================
+  
   // Preview Crawler - Fetch dữ liệu từ URL (KHÔNG lưu vào database, chỉ preview)
   fetchFromUrl: (url, options = {}) => {
     const body = {
@@ -14,39 +16,99 @@ const articleApi = {
     return axiosClientForCrawl.post('/articles/preview-crawl', body);
   },
 
-  // CRUD Articles
-  createArticle: (data) => {
-    return axiosClient.post('/articles', data);
-  },
-
-  getAllArticles: (params) => {
-    return axiosClient.get('/articles', { params });
-  },
-
-  getArticleById: (id) => {
-    return axiosClient.get(`/articles/${id}`);
-  },
-
-  updateArticle: (id, data) => {
-    return axiosClient.put(`/articles/${id}`, data);
-  },
-
-  deleteArticle: (id) => {
-    return axiosClient.delete(`/articles/${id}`);
-  },
-
   // Generate Audio (if available)
   generateAudio: (articleId) => {
     return axiosClient.post(`/articles/${articleId}/generate-audio`);
   },
 
-  // Publish/Unpublish
+  // ==================== ADMIN CRUD APIs ====================
+  // Admin có thể thao tác với TẤT CẢ bài viết (DRAFT, SCHEDULED, PUBLISHED)
+  
+  // Tạo bài báo mới
+  createArticle: (data) => {
+    return axiosClient.post('/admin/articles', data);
+  },
+
+  // Lấy tất cả bài báo (Admin - bao gồm cả DRAFT, SCHEDULED, PUBLISHED)
+  getAllArticles: (params) => {
+    return axiosClient.get('/admin/articles', { params });
+  },
+
+  // Lấy bài báo theo ID (Admin - xem được mọi status)
+  getArticleById: (id) => {
+    return axiosClient.get(`/admin/articles/${id}`);
+  },
+
+  // Cập nhật bài báo
+  updateArticle: (id, data) => {
+    return axiosClient.put(`/admin/articles/${id}`, data);
+  },
+
+  // Xóa bài báo
+  deleteArticle: (id) => {
+    return axiosClient.delete(`/admin/articles/${id}`);
+  },
+
+  // ==================== STATUS MANAGEMENT APIs ====================
+  
+  // Publish ngay lập tức
+  publishNow: (id) => {
+    return axiosClient.put(`/admin/articles/${id}/publish`);
+  },
+
+  // Unpublish - gỡ xuất bản (chuyển về DRAFT)
+  unpublish: (id) => {
+    return axiosClient.put(`/admin/articles/${id}/unpublish`);
+  },
+
+  // Lên lịch publish tự động
+  schedulePublish: (id, scheduledDate) => {
+    return axiosClient.put(`/admin/articles/${id}/schedule?scheduledDate=${encodeURIComponent(scheduledDate)}`);
+  },
+
+  // Hủy lịch publish
+  unschedule: (id) => {
+    return axiosClient.put(`/admin/articles/${id}/unschedule`);
+  },
+
+  // Lấy bài báo theo status (DRAFT, SCHEDULED, PUBLISHED)
+  getArticlesByStatus: (status, params = {}) => {
+    return axiosClient.get(`/admin/articles/by-status`, { 
+      params: { status, ...params } 
+    });
+  },
+
+  // Thống kê số lượng bài báo theo status
+  getStatistics: () => {
+    return axiosClient.get('/admin/articles/statistics');
+  },
+
+  // ==================== PUBLIC USER APIs ====================
+  // User CHỈ nhìn thấy bài có status = PUBLISHED
+  
+  // Lấy danh sách bài PUBLISHED (cho User)
+  getPublishedArticles: (params) => {
+    return axiosClient.get('/articles', { params });
+  },
+
+  // Lấy chi tiết bài PUBLISHED (cho User)
+  getPublishedArticleById: (id) => {
+    return axiosClient.get(`/articles/${id}`);
+  },
+
+  // ==================== LEGACY SUPPORT ====================
+  // Giữ lại để tương thích với code cũ
+  
   publishArticle: (id) => {
-    return axiosClient.patch(`/articles/${id}/publish`);
+    return axiosClient.put(`/admin/articles/${id}/publish`);
   },
 
   unpublishArticle: (id) => {
-    return axiosClient.patch(`/articles/${id}/unpublish`);
+    return axiosClient.put(`/admin/articles/${id}/unpublish`);
+  },
+
+  revertToDraft: (id) => {
+    return axiosClient.put(`/admin/articles/${id}/unpublish`);
   }
 };
 

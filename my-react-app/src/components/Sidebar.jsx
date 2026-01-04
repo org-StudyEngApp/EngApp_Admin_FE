@@ -17,6 +17,8 @@ import {
   Edit3, // Icon cho Blog
   Newspaper, // Icon cho Articles/News
   FolderOpen, // Icon cho Topics
+  TrendingUp, // Icon cho Analytics/Results
+  Search, // Icon cho Search
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -27,6 +29,7 @@ const Sidebar = () => {
     flashcards: false,
     blogs: false,
     articles: false,
+    examResults: false,
   });
 
   const toggleMenu = (menu) => {
@@ -132,6 +135,23 @@ const Sidebar = () => {
           title: "Quản lý Chủ đề",
           icon: <FolderOpen size={16} />,
           path: "/admin/topics",
+        },
+      ],
+    },
+    {
+      title: "Exam Results & Analytics",
+      icon: <TrendingUp size={20} />,
+      key: "examResults",
+      submenu: [
+        {
+          title: "Results Dashboard",
+          icon: <BarChart3 size={16} />,
+          path: "/admin/exam-results/dashboard",
+        },
+        {
+          title: "Search Results",
+          icon: <Search size={16} />,
+          path: "/admin/exam-results/search",
         },
       ],
     },

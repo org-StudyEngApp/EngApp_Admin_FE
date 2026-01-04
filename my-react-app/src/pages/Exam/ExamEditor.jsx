@@ -3,44 +3,53 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Save, 
-  Plus
+  Plus,
+  BookOpen,
+  Headphones,
+  CheckCircle2,
+  FileSpreadsheet
 } from 'lucide-react';
 import PartEditor from '../../components/ExamEditor/PartEditor';
+import ImportQuestionsModal from '../../components/ExamEditor/ImportQuestionsModal';
 import AdminExamService from '../../services/AdminExamService';
+
+const EXAM_TYPES = ['READING', 'LISTENING', 'FULL_TEST'];
+const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
 
 const ExamEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = !!id;
-  
-  console.log('ExamEditor mounted, id:', id, 'isEditing:', isEditing); // Debug log
 
   const [exam, setExam] = useState({
     id: null,
     title: '',
     description: '',
-    level: 'TOPIK I',
+    level: 'Intermediate',
+    examType: 'READING',
     durationTimes: 60,
     instructions: '',
     requirements: '',
     parts: []
   });
   const [loading, setLoading] = useState(false);
-  const [uploadingFiles, setUploadingFiles] = useState({});
-  const [expandedParts, setExpandedParts] = useState({});
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [selectedPartForImport, setSelectedPartForImport] = useState(null);
+  const [activePartIndex, setActivePartIndex] = useState(0);
 
   useEffect(() => {
-    console.log('ExamEditor useEffect, isEditing:', isEditing, 'id:', id); // Debug log
     if (isEditing) {
       fetchExamData();
     }
-  }, [id, isEditing]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const fetchExamData = async () => {
     setLoading(true);
     try {
       const examData = await AdminExamService.getExamDetail(id);
       setExam(examData);
+      setActivePartIndex(0);
     } catch (error) {
       console.error('Error fetching exam:', error);
       alert('Không thể tải thông tin bài thi. Vui lòng thử lại.');
@@ -50,142 +59,60 @@ const ExamEditor = () => {
   };
 
   const handleSaveExam = async () => {
+    // Validate
+    if (!exam.title.trim()) {
+      alert('Vui lòng nhập tiêu đề bài thi');
+      return;
+    }
+    if (!exam.examType) {
+      alert('Vui lòng chọn loại bài thi');
+      return;
+    }
+    if (!exam.level) {
+      alert('Vui lòng chọn cấp độ bài thi');
+      return;
+    }
+    if (!exam.durationTimes || exam.durationTimes <= 0) {
+      alert('Vui lòng nhập thời gian làm bài hợp lệ');
+      return;
+    }
+
     setLoading(true);
     try {
-      // Validate required fields
-      if (!exam.title.trim()) {
-        alert('Vui lòng nhập tiêu đề bài thi');
-        setLoading(false);
-        return;
-      }
-      
-      if (!exam.level) {
-        alert('Vui lòng chọn cấp độ bài thi');
-        setLoading(false);
-        return;
-      }
-      
-      if (!exam.durationTimes || exam.durationTimes <= 0) {
-        alert('Vui lòng nhập thời gian làm bài hợp lệ');
-        setLoading(false);
-        return;
-      }
-
-      // Prepare data for API
       const examData = {
         title: exam.title,
         description: exam.description || '',
         level: exam.level,
+        examType: exam.examType,
         durationTimes: exam.durationTimes,
         instructions: exam.instructions || '',
         requirements: exam.requirements || ''
       };
 
-      console.log('Saving exam data:', examData);
-      
-      // 1. Lưu thông tin cơ bản của bài thi
       let examId;
-      let result;
-      
       if (isEditing) {
-        result = await AdminExamService.updateExam(id, examData);
+        await AdminExamService.updateExam(id, examData);
         examId = id;
-        console.log('Updated exam:', result);
       } else {
-        result = await AdminExamService.createExam(examData);
+        const result = await AdminExamService.createExam(examData);
         examId = result.id;
-        console.log('Created new exam with ID:', examId);
       }
 
-      // 2. Lưu các phần thi và câu hỏi nếu có
+      // Save parts if any
       if (exam.parts.length > 0) {
         for (const part of exam.parts) {
-          const partData = {
-            title: part.title,
-            description: part.description || '',
-            instructions: part.instructions || '',
-            timeLimit: part.timeLimit || 30
-          };
-
-          console.log(`Saving part for exam ${examId}:`, partData);
-          
-          // Tạo phần thi mới hoặc cập nhật phần thi hiện có
-          let partId;
-          if (part.id && !isNaN(parseInt(part.id)) && part.id < 1000000) {
-            // Part đã tồn tại trong database
-            const updatedPart = await AdminExamService.updatePart(part.id, partData);
-            partId = part.id;
-            console.log('Updated existing part:', updatedPart);
-          } else {
-            // Part mới
-            const newPart = await AdminExamService.addPart(examId, partData);
-            partId = newPart.id;
-            console.log('Added new part with ID:', partId);
-          }
-
-          // Lưu câu hỏi cho phần thi
-          if (part.questions && part.questions.length > 0) {
-            for (const question of part.questions) {
-              const questionData = {
-                questionText: question.questionText,
-                questionType: question.questionType,
-                option: question.option,
-                correctAnswer: question.correctAnswer,
-                explanation: question.explanation || '',
-                points: question.points || 1,
-                questionOrder: question.questionOrder || 1,
-                // Không bao gồm imageUrl và audioUrl ở đây, sẽ upload riêng
-              };
-
-              console.log(`Saving question for part ${partId}:`, questionData);
-              
-              // Tạo câu hỏi mới hoặc cập nhật câu hỏi hiện có
-              let questionId;
-              if (question.id && !isNaN(parseInt(question.id)) && question.id < 1000000) {
-                // Question đã tồn tại
-                const updatedQuestion = await AdminExamService.updateQuestion(question.id, questionData);
-                questionId = question.id;
-                console.log('Updated existing question:', updatedQuestion);
-              } else {
-                // Question mới
-                const newQuestion = await AdminExamService.addQuestion(partId, questionData);
-                questionId = newQuestion.id;
-                console.log('Added new question with ID:', questionId);
-              }
-
-              // Upload media files nếu có và là blob URLs (chưa được upload)
-              if (question.imageUrl && question.imageUrl.startsWith('blob:')) {
-                try {
-                  // File ảnh mới cần được upload
-                  console.log(`Đang xử lý upload ảnh cho câu hỏi ${questionId}`);
-                  const imageFile = await fetch(question.imageUrl).then(r => r.blob());
-                  const formattedFile = new File([imageFile], `question_${questionId}_image.png`, { type: 'image/png' });
-                  await AdminExamService.uploadFileAndUpdateQuestion(questionId, formattedFile, 'image');
-                  console.log(`Upload ảnh thành công cho câu hỏi ${questionId}`);
-                } catch (error) {
-                  console.error(`Lỗi upload ảnh:`, error);
-                }
-              }
-
-              if (question.audioUrl && question.audioUrl.startsWith('blob:')) {
-                try {
-                  // File audio mới cần được upload
-                  console.log(`Đang xử lý upload audio cho câu hỏi ${questionId}`);
-                  const audioFile = await fetch(question.audioUrl).then(r => r.blob());
-                  const formattedFile = new File([audioFile], `question_${questionId}_audio.mp3`, { type: 'audio/mpeg' });
-                  await AdminExamService.uploadFileAndUpdateQuestion(questionId, formattedFile, 'audio');
-                  console.log(`Upload audio thành công cho câu hỏi ${questionId}`);
-                } catch (error) {
-                  console.error(`Lỗi upload audio:`, error);
-                }
-              }
-            }
-          }
+          await savePart(examId, part);
         }
       }
 
       alert(isEditing ? 'Cập nhật bài thi thành công!' : 'Tạo bài thi thành công!');
-      navigate('/admin/tests');
+      
+      // QUAN TRỌNG: Reload exam data để lấy ID thật cho parts và questions
+      console.log('🔄 Reloading exam data to get real IDs...');
+      const freshData = await AdminExamService.getExamDetail(examId);
+      setExam(freshData);
+      console.log('✅ Exam reloaded. Parts có ID thật, bạn có thể upload media cho questions!');
+      
     } catch (error) {
       console.error('Error saving exam:', error);
       alert('Có lỗi xảy ra khi lưu bài thi: ' + (error.response?.data?.message || error.message));
@@ -194,382 +121,463 @@ const ExamEditor = () => {
     }
   };
 
+  const savePart = async (examId, part) => {
+    const partData = {
+      title: part.title,
+      description: part.description || '',
+      instructions: part.instructions || '',
+      timeLimit: part.timeLimit || 30
+    };
+
+    let partId;
+    if (part.id && !String(part.id).startsWith('temp_')) {
+      await AdminExamService.updatePart(part.id, partData);
+      partId = part.id;
+    } else {
+      const newPart = await AdminExamService.addPart(examId, partData);
+      partId = newPart.id;
+    }
+
+    // Save questions
+    if (part.questions && part.questions.length > 0) {
+      for (const question of part.questions) {
+        await saveQuestion(partId, question);
+      }
+    }
+  };
+
+  const saveQuestion = async (partId, question) => {
+    // Parse options để đảm bảo format đúng trước khi stringify
+    let optionsArray = [];
+    if (Array.isArray(question.options)) {
+      optionsArray = question.options;
+    } else if (typeof question.option === 'string') {
+      try {
+        optionsArray = JSON.parse(question.option);
+      } catch {
+        optionsArray = [];
+      }
+    }
+
+    // Đảm bảo mỗi đáp án có format "A. ...", "B. ...", "C. ...", "D. ..."
+    const letters = ['A', 'B', 'C', 'D'];
+    const formattedOptions = optionsArray.map((opt, idx) => {
+      if (!opt) return '';
+      const letter = letters[idx];
+      // Nếu chưa có prefix, thêm vào
+      if (!opt.startsWith(`${letter}. `)) {
+        const cleanText = opt.replace(/^[A-D]\.\s*/, '');
+        return cleanText ? `${letter}. ${cleanText}` : '';
+      }
+      return opt;
+    });
+
+    const questionData = {
+      questionText: question.questionText,
+      questionType: question.questionType || 'MULTIPLE_CHOICE',
+      option: JSON.stringify(formattedOptions), // Stringify 1 lần duy nhất với format chuẩn
+      correctAnswer: question.correctAnswer,
+      explanation: question.explanation || '',
+      points: question.points || 1,
+      audioUrl: question.audioUrl || null,
+      imageUrl: question.imageUrl || null
+    };
+
+    console.log('💾 Saving question with options:', {
+      raw: question.options,
+      formatted: formattedOptions,
+      stringified: questionData.option
+    });
+
+    if (question.id && !String(question.id).startsWith('temp_')) {
+      // Update existing question
+      await AdminExamService.updateQuestion(question.id, questionData);
+    } else {
+      // Create new question và lấy ID thật từ backend
+      const response = await AdminExamService.addQuestion(partId, questionData);
+      // QUAN TRỌNG: Cập nhật ID thật vào question sau khi tạo thành công
+      if (response && response.id) {
+        question.id = response.id;
+        console.log('✅ Question created with real ID:', response.id);
+      }
+    }
+  };
+
   const handleAddPart = () => {
     const newPart = {
-      id: Date.now(),
-      partNumber: exam.parts.length + 1,
+      id: `temp_${Date.now()}`,
       title: `Phần ${exam.parts.length + 1}`,
       description: '',
       instructions: '',
       timeLimit: 30,
-      questionCount: 0,
       questions: []
     };
-    setExam({
-      ...exam,
-      parts: [...exam.parts, newPart]
-    });
+    const newParts = [...exam.parts, newPart];
+    setExam({ ...exam, parts: newParts });
+    setActivePartIndex(newParts.length - 1);
   };
 
-  const handleDeletePart = (partIndex) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa phần này?')) {
-      const updatedParts = exam.parts.filter((_, index) => index !== partIndex);
-      setExam({
-        ...exam,
-        parts: updatedParts.map((part, index) => ({
-          ...part,
-          partNumber: index + 1
-        }))
-      });
+  const handleUpdatePart = (partIndex, updatedPart) => {
+    const newParts = [...exam.parts];
+    newParts[partIndex] = updatedPart;
+    setExam({ ...exam, parts: newParts });
+  };
+
+  const handleDeletePart = async (partIndex) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa phần thi này?')) {
+      return;
     }
-  };
 
-  const handleAddQuestion = (partIndex) => {
-    const newQuestion = {
-      id: Date.now(),
-      questionText: '',
-      questionType: 'MULTIPLE_CHOICE',
-      option: 'A)  B)  C)  D) ',
-      correctAnswer: 'A',
-      explanation: '',
-      audioUrl: null,
-      imageUrl: null,
-      questionOrder: exam.parts[partIndex].questions.length + 1,
-      points: 1
-    };
-
-    const updatedParts = [...exam.parts];
-    updatedParts[partIndex].questions.push(newQuestion);
-    updatedParts[partIndex].questionCount = updatedParts[partIndex].questions.length;
-    
-    setExam({
-      ...exam,
-      parts: updatedParts
-    });
-  };
-
-  const handleDeleteQuestion = (partIndex, questionIndex) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa câu hỏi này?')) {
-      const updatedParts = [...exam.parts];
-      updatedParts[partIndex].questions.splice(questionIndex, 1);
-      updatedParts[partIndex].questionCount = updatedParts[partIndex].questions.length;
-      
-      // Cập nhật lại order
-      updatedParts[partIndex].questions.forEach((q, idx) => {
-        q.questionOrder = idx + 1;
-      });
-      
-      setExam({
-        ...exam,
-        parts: updatedParts
-      });
-    }
-  };
-
-  const handleFileUpload = async (file, type, partIndex, questionIndex) => {
-    const uploadKey = `${partIndex}-${questionIndex}-${type}`;
-    setUploadingFiles(prev => ({ ...prev, [uploadKey]: true }));
-
-    try {
-      // Hiển thị preview ngay lập tức để UX tốt hơn
-      const previewUrl = URL.createObjectURL(file);
-      
-      // Cập nhật state để hiển thị preview
-      const updatedParts = [...exam.parts];
-      if (type === 'image') {
-        updatedParts[partIndex].questions[questionIndex].imageUrl = previewUrl;
-      } else if (type === 'audio') {
-        updatedParts[partIndex].questions[questionIndex].audioUrl = previewUrl;
+    const part = exam.parts[partIndex];
+    if (part.id && !String(part.id).startsWith('temp_')) {
+      try {
+        await AdminExamService.deletePart(part.id);
+      } catch (error) {
+        console.error('Error deleting part:', error);
+        alert('Có lỗi xảy ra khi xóa phần thi');
+        return;
       }
-      
-      setExam({ ...exam, parts: updatedParts });
-      
-      // Lấy question ID nếu câu hỏi đã được lưu trong database
-      const question = updatedParts[partIndex].questions[questionIndex];
-      if (question.id && !isNaN(parseInt(question.id)) && question.id < 1000000) {
-        // Câu hỏi đã tồn tại trong DB, upload và cập nhật ngay
-        try {
-          const result = await AdminExamService.uploadFileAndUpdateQuestion(
-            question.id, 
-            file, 
-            type
-          );
-          
-          // Cập nhật URL thực từ Cloudinary
-          if (type === 'image') {
-            updatedParts[partIndex].questions[questionIndex].imageUrl = result.url;
-          } else if (type === 'audio') {
-            updatedParts[partIndex].questions[questionIndex].audioUrl = result.url;
-          }
-          
-          setExam({ ...exam, parts: updatedParts });
-          alert(`Upload ${type} thành công!`);
-        } catch (error) {
-          console.error(`Lỗi upload ${type} lên server:`, error);
-          alert(`Upload ${type} lên server thất bại: ${error.message}`);
-          
-          // Xóa preview nếu upload thất bại
-          if (type === 'image') {
-            updatedParts[partIndex].questions[questionIndex].imageUrl = null;
-          } else if (type === 'audio') {
-            updatedParts[partIndex].questions[questionIndex].audioUrl = null;
-          }
-          setExam({ ...exam, parts: updatedParts });
+    }
+
+    const newParts = exam.parts.filter((_, index) => index !== partIndex);
+    setExam({ ...exam, parts: newParts });
+
+    if (newParts.length === 0) {
+      setActivePartIndex(0);
+    } else {
+      if (partIndex < activePartIndex) {
+        setActivePartIndex((prev) => Math.max(0, prev - 1));
+      } else if (partIndex === activePartIndex) {
+        setActivePartIndex((prev) => Math.min(prev, newParts.length - 1));
+      }
+    }
+  };
+
+  const handleImportQuestions = async (questions) => {
+    if (!selectedPartForImport) {
+      alert('Vui lòng chọn phần thi để import câu hỏi');
+      return;
+    }
+
+    const partIndex = exam.parts.findIndex(p => p.id === selectedPartForImport);
+    if (partIndex === -1) {
+      alert('Không tìm thấy phần thi');
+      return;
+    }
+
+    // Nếu part đã được lưu, import trực tiếp vào database
+    const part = exam.parts[partIndex];
+    if (part.id && !String(part.id).startsWith('temp_')) {
+      try {
+        setLoading(true);
+        
+        // Import từng câu hỏi vào database
+        for (const question of questions) {
+          await AdminExamService.addQuestion(part.id, question);
         }
-      } else {
-        // Câu hỏi chưa có trong DB, lưu file tạm vào state để sau lưu bài thi sẽ upload
-        console.log(`Câu hỏi chưa được lưu trong DB, sẽ upload ${type} khi lưu bài thi`);
+
+        // Reload exam data để cập nhật UI
+        const freshData = await AdminExamService.getExamDetail(exam.id);
+        setExam(freshData);
+        
+        alert(`✅ Đã import thành công ${questions.length} câu hỏi!`);
+      } catch (error) {
+        console.error('Error importing questions:', error);
+        alert('Có lỗi khi import câu hỏi: ' + (error.response?.data?.message || error.message));
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error(`Error handling ${type} file:`, error);
-      alert(`Lỗi xử lý file ${type}: ${error.message}`);
-    } finally {
-      setUploadingFiles(prev => ({ ...prev, [uploadKey]: false }));
+    } else {
+      // Part chưa lưu, thêm vào state tạm
+      const updatedPart = {
+        ...part,
+        questions: [...(part.questions || []), ...questions]
+      };
+      handleUpdatePart(partIndex, updatedPart);
+      alert(`✅ Đã thêm ${questions.length} câu hỏi vào phần thi. Nhớ bấm "Lưu bài thi" để lưu vào database!`);
+    }
+
+    setImportModalOpen(false);
+    setSelectedPartForImport(null);
+  };
+
+  const handleOpenImportModal = (partId) => {
+    setSelectedPartForImport(partId);
+    setImportModalOpen(true);
+  };
+
+  const getExamTypeIcon = (type) => {
+    switch (type) {
+      case 'READING':
+        return <BookOpen className="w-5 h-5" />;
+      case 'LISTENING':
+        return <Headphones className="w-5 h-5" />;
+      case 'FULL_TEST':
+        return <CheckCircle2 className="w-5 h-5" />;
+      default:
+        return <BookOpen className="w-5 h-5" />;
     }
   };
-
-  const togglePartExpanded = (partIndex) => {
-    setExpandedParts(prev => ({
-      ...prev,
-      [partIndex]: !prev[partIndex]
-    }));
-  };
-
-  const updateExamField = (field, value) => {
-    setExam({
-      ...exam,
-      [field]: value
-    });
-  };
-
-  const updatePartField = (partIndex, field, value) => {
-    const updatedParts = [...exam.parts];
-    updatedParts[partIndex][field] = value;
-    setExam({
-      ...exam,
-      parts: updatedParts
-    });
-  };
-
-  const updateQuestionField = (partIndex, questionIndex, field, value) => {
-    const updatedParts = [...exam.parts];
-    updatedParts[partIndex].questions[questionIndex][field] = value;
-    setExam({
-      ...exam,
-      parts: updatedParts
-    });
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Đang tải...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate('/admin/tests')}
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-              >
-                <ArrowLeft size={20} />
-                Quay lại
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {isEditing ? 'Chỉnh sửa bài thi' : 'Tạo bài thi mới'}
-                </h1>
-                <p className="text-gray-600">{exam.title || 'Nhập tiêu đề bài thi'}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleSaveExam}
-                disabled={loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
-              >
-                <Save size={16} />
-                {loading ? 'Đang lưu...' : 'Lưu bài thi'}
-              </button>
-            </div>
-          </div>
-        </div>
+      <div className="mb-6">
+        <button
+          onClick={() => navigate('/admin/tests')}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>Quay lại</span>
+        </button>
+        <h1 className="text-3xl font-bold text-gray-900">
+          {isEditing ? 'Chỉnh sửa bài thi' : 'Tạo bài thi mới'}
+        </h1>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Basic Information */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Thông tin cơ bản</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tiêu đề bài thi *
-              </label>
-              <input
-                type="text"
-                value={exam.title}
-                onChange={(e) => updateExamField('title', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Nhập tiêu đề bài thi"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Cấp độ *
-              </label>
-              <select
-                value={exam.level}
-                onChange={(e) => updateExamField('level', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="TOPIK I">TOPIK I</option>
-                <option value="TOPIK II">TOPIK II</option>
-                <option value="Sơ cấp">Sơ cấp</option>
-                <option value="Trung cấp">Trung cấp</option>
-                <option value="Cao cấp">Cao cấp</option>
-              </select>
+      {/* Basic Info Form */}
+      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Thông tin cơ bản</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Title */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tiêu đề bài thi <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={exam.title}
+              onChange={(e) => setExam({ ...exam, title: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Nhập tiêu đề bài thi"
+            />
+          </div>
+
+          {/* Exam Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Loại bài thi <span className="text-red-500">*</span>
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {EXAM_TYPES.map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setExam({ ...exam, examType: type })}
+                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
+                    exam.examType === type
+                      ? 'border-blue-600 bg-blue-50 text-blue-600'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  {getExamTypeIcon(type)}
+                  <span className="font-medium text-sm">
+                    {type === 'READING' ? 'Reading' : type === 'LISTENING' ? 'Listening' : 'Full Test'}
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="mt-4">
+          {/* Level */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Cấp độ <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={exam.level}
+              onChange={(e) => setExam({ ...exam, level: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {LEVELS.map((level) => (
+                <option key={level} value={level}>{level}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Duration */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Thời gian (phút) <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              value={exam.durationTimes}
+              onChange={(e) => setExam({ ...exam, durationTimes: parseInt(e.target.value) || 0 })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              min="1"
+            />
+          </div>
+
+          {/* Description */}
+          <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Mô tả
             </label>
             <textarea
               value={exam.description}
-              onChange={(e) => updateExamField('description', e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => setExam({ ...exam, description: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows="3"
               placeholder="Mô tả về bài thi"
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Thời gian (phút) *
-              </label>
-              <input
-                type="number"
-                value={exam.durationTimes}
-                onChange={(e) => updateExamField('durationTimes', parseInt(e.target.value))}
-                min="1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tổng số phần
-              </label>
-              <input
-                type="text"
-                value={exam.parts.length}
-                readOnly
-                className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tổng câu hỏi
-              </label>
-              <input
-                type="text"
-                value={exam.parts.reduce((sum, part) => sum + part.questions.length, 0)}
-                readOnly
-                className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg"
-              />
-            </div>
+          {/* Instructions */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Hướng dẫn
+            </label>
+            <textarea
+              value={exam.instructions}
+              onChange={(e) => setExam({ ...exam, instructions: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows="3"
+              placeholder="Hướng dẫn làm bài"
+            />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Hướng dẫn
-              </label>
-              <textarea
-                value={exam.instructions}
-                onChange={(e) => updateExamField('instructions', e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Hướng dẫn làm bài"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Yêu cầu
-              </label>
-              <textarea
-                value={exam.requirements}
-                onChange={(e) => updateExamField('requirements', e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Yêu cầu đối với thí sinh"
-              />
-            </div>
+          {/* Requirements */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Yêu cầu
+            </label>
+            <textarea
+              value={exam.requirements}
+              onChange={(e) => setExam({ ...exam, requirements: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows="2"
+              placeholder="Các yêu cầu cho thí sinh"
+            />
           </div>
-        </div>
-
-        {/* Parts Section */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Cấu trúc bài thi</h2>
-            <button
-              onClick={handleAddPart}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
-            >
-              <Plus size={16} />
-              Thêm phần
-            </button>
-          </div>
-
-          {exam.parts.length === 0 ? (
-            <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-              <p className="text-gray-500">Chưa có phần nào. Nhấn "Thêm phần" để bắt đầu.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {exam.parts.map((part, partIndex) => (
-                <PartEditor
-                  key={part.id}
-                  part={part}
-                  partIndex={partIndex}
-                  isExpanded={expandedParts[partIndex]}
-                  onToggleExpanded={() => togglePartExpanded(partIndex)}
-                  onUpdatePart={(field, value) => updatePartField(partIndex, field, value)}
-                  onDeletePart={() => handleDeletePart(partIndex)}
-                  onAddQuestion={() => handleAddQuestion(partIndex)}
-                  onUpdateQuestion={(questionIndex, field, value) => 
-                    updateQuestionField(partIndex, questionIndex, field, value)
-                  }
-                  onDeleteQuestion={(questionIndex) => 
-                    handleDeleteQuestion(partIndex, questionIndex)
-                  }
-                  onFileUpload={(file, type, questionIndex) => 
-                    handleFileUpload(file, type, partIndex, questionIndex)
-                  }
-                  uploadingFiles={uploadingFiles}
-                />
-              ))}
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Parts Section */}
+      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-gray-900">Các phần thi</h2>
+          <button
+            onClick={handleAddPart}
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            <Plus className="w-5 h-5" />
+            Thêm phần thi
+          </button>
+        </div>
+
+        {exam.parts.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <p>Chưa có phần thi nào. Nhấn "Thêm phần thi" để bắt đầu.</p>
+          </div>
+        ) : (
+          <>
+            {/* Thanh điều hướng giữa các phần */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-wrap gap-2">
+                {exam.parts.map((part, index) => (
+                  <button
+                    key={part.id}
+                    type="button"
+                    onClick={() => setActivePartIndex(index)}
+                    className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                      index === activePartIndex
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                    }`}
+                  >
+                    Phần {index + 1}
+                  </button>
+                ))}
+              </div>
+              <div className="text-sm text-gray-500">
+                Đang xem: <span className="font-medium">Phần {activePartIndex + 1}</span> / {exam.parts.length}
+              </div>
+            </div>
+
+            {/* Editor cho phần đang chọn */}
+            <div className="space-y-4">
+              {exam.parts[activePartIndex] && (
+                <PartEditor
+                  key={exam.parts[activePartIndex].id}
+                  part={exam.parts[activePartIndex]}
+                  partIndex={activePartIndex}
+                  examType={exam.examType}
+                  onUpdate={(updatedPart) => handleUpdatePart(activePartIndex, updatedPart)}
+                  onDelete={() => handleDeletePart(activePartIndex)}
+                  onOpenImportModal={handleOpenImportModal}
+                />
+              )}
+            </div>
+
+            {/* Nút chuyển part trước / sau */}
+            {exam.parts.length > 1 && (
+              <div className="flex items-center justify-between mt-4">
+                <button
+                  type="button"
+                  onClick={() => setActivePartIndex((prev) => Math.max(0, prev - 1))}
+                  disabled={activePartIndex === 0}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ← Phần trước
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePartIndex((prev) => Math.min(exam.parts.length - 1, prev + 1))}
+                  disabled={activePartIndex === exam.parts.length - 1}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Phần tiếp →
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Action Buttons */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+        <div className="flex items-start gap-3">
+          <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <h3 className="font-medium text-blue-900 mb-1">Lưu ý quan trọng</h3>
+            <p className="text-sm text-blue-800">
+              Sau khi click <strong>"Lưu bài thi"</strong>, hệ thống sẽ lưu tất cả parts và questions vào database. 
+              Sau đó bạn có thể upload hình ảnh và audio cho từng câu hỏi.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end gap-4">
+        <button
+          onClick={() => navigate('/admin/tests')}
+          className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+        >
+          Hủy
+        </button>
+        <button
+          onClick={handleSaveExam}
+          disabled={loading}
+          className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+          title="Lưu bài thi và tất cả parts/questions vào database"
+        >
+          <Save className="w-5 h-5" />
+          {loading ? 'Đang lưu...' : (isEditing ? 'Cập nhật bài thi' : 'Lưu bài thi')}
+        </button>
+      </div>
+
+      {/* Import Questions Modal */}
+      <ImportQuestionsModal
+        isOpen={importModalOpen}
+        onClose={() => {
+          setImportModalOpen(false);
+          setSelectedPartForImport(null);
+        }}
+        onImport={handleImportQuestions}
+        partId={selectedPartForImport}
+      />
     </div>
   );
 };

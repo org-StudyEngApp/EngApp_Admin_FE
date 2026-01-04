@@ -18,6 +18,15 @@ export const axiosClientForCrawl = axios.create({
   },
 });
 
+// Axios instance cho vocabulary API (không có /v1 trong path)
+export const axiosClientForVocabulary = axios.create({
+  baseURL: "http://localhost:8080/api",
+  timeout: 120000, // 120 seconds (2 minutes) for AI generation
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
 // Request interceptor
 axiosClient.interceptors.request.use(
   (config) => {
@@ -116,6 +125,50 @@ axiosClientForCrawl.interceptors.response.use(
   },
   (error) => {
     console.error("Crawl Error:", error.response?.status, error.message);
+    
+    if (error.response?.status === 401) {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("token");
+      localStorage.removeItem("adminToken");
+      window.location.href = "/login";
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
+// Apply same interceptors to vocabulary client
+axiosClientForVocabulary.interceptors.request.use(
+  (config) => {
+    const token =
+      localStorage.getItem("accessToken") ||
+      localStorage.getItem("token") ||
+      localStorage.getItem("adminToken");
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    console.log("Vocabulary Request:", config.method?.toUpperCase(), config.url);
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+axiosClientForVocabulary.interceptors.response.use(
+  (response) => {
+    console.log("Vocabulary Response:", response.status, response.config.url);
+    
+    if (response.data && response.data.code === 1000 && response.data.result !== undefined) {
+      return response.data.result;
+    }
+    
+    return response.data || response;
+  },
+  (error) => {
+    console.error("Vocabulary Error:", error.response?.status, error.message);
     
     if (error.response?.status === 401) {
       localStorage.removeItem("accessToken");

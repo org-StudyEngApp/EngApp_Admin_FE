@@ -29,7 +29,12 @@ import UserList from "./pages/user/UserList";
 // Import AdminNews components
 import ArticleList from "./pages/AdminNews/ArticleList";
 import ArticleEditor from "./pages/AdminNews/ArticleEditor";
+import ArticleVocabularyPage from "./pages/AdminNews/ArticleVocabularyPage";
 import TopicManager from "./pages/Admin/TopicManager";
+
+// Import Exam Results & Analytics components
+import ExamResultsDashboard from "./pages/Admin/ExamResultsDashboard";
+import ExamResultsSearch from "./pages/Admin/ExamResultsSearch";
 
 
 
@@ -222,6 +227,14 @@ function App() {
             </AdminLayout>
           }
         />
+        <Route
+          path="/admin/articles/:articleId/vocabulary"
+          element={
+            <AdminLayout title="Quản lý Vocabulary">
+              <ArticleVocabularyPage />
+            </AdminLayout>
+          }
+        />
 
         {/* Topic Management Route */}
         <Route
@@ -239,6 +252,24 @@ function App() {
           element={
             <AdminLayout title="Quản lý thông báo">
               <NotificationManagement />
+            </AdminLayout>
+          }
+        />
+
+        {/* Exam Results & Analytics Routes */}
+        <Route
+          path="/admin/exam-results/dashboard"
+          element={
+            <AdminLayout title="Exam Results Dashboard">
+              <ExamResultsDashboard />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/exam-results/search"
+          element={
+            <AdminLayout title="Search Exam Results">
+              <ExamResultsSearch />
             </AdminLayout>
           }
         />

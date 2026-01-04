@@ -1,217 +1,276 @@
-import axios from 'axios';
-import AzureStorageService from './AzureStorageService';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-});
-
-// Add auth token to requests
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import examApi from '../api/examApi';
 
 const AdminExamService = {
-  // Get all exams for admin
-  getAllExams: async () => {
+  // ========== QUẢN LÝ BÀI THI ==========
+  
+  /**
+   * Lấy tất cả bài thi (Admin) - có thể filter theo examType
+   * @param {string} examType - 'READING' | 'LISTENING' | 'FULL_TEST' (optional)
+   */
+  getAllExams: async (examType = null) => {
     try {
-      const response = await api.get('/admin/exams');
-      console.log('Fetched exams from server:', response.data);
-      return response.data;
+      const params = examType ? { examType } : {};
+      const response = await examApi.getAllExams(params);
+      console.log('Fetched exams from server:', response);
+      return response;
     } catch (error) {
       console.error('Error fetching exams:', error);
       throw error;
     }
   },
 
-  // Delete an exam
-  deleteExam: async (id) => {
-    try {
-      console.log('Deleting exam with ID:', id);
-      const response = await api.delete(`/admin/exams/${id}`);
-      console.log('Delete response:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error deleting exam:', error);
-      throw error;
-    }
-  },
-
-  // Get exam detail for editing
+  /**
+   * Lấy chi tiết bài thi để edit
+   */
   getExamDetail: async (id) => {
     try {
-      const response = await api.get(`/admin/exams/${id}`);
-      console.log('Got exam details:', response.data);
-      return response.data;
+      const response = await examApi.getExamDetail(id);
+      console.log('Got exam details:', response);
+      return response;
     } catch (error) {
       console.error('Error fetching exam:', error);
       throw error;
     }
   },
 
-  // Create new exam
+  /**
+   * Tạo bài thi mới
+   * @param {Object} examData - { title, description, level, examType, durationTimes, instructions, requirements }
+   */
   createExam: async (examData) => {
     try {
       console.log('Sending data to create exam:', examData);
-      const response = await api.post('/admin/exams', examData);
-      console.log('Create exam response:', response.data);
-      return response.data;
+      const response = await examApi.createExam(examData);
+      console.log('Create exam response:', response);
+      return response;
     } catch (error) {
       console.error('Error creating exam:', error);
       throw error;
     }
   },
 
-  // Update exam
+  /**
+   * Cập nhật thông tin bài thi
+   */
   updateExam: async (id, examData) => {
     try {
       console.log('Sending data to update exam:', examData);
-      const response = await api.put(`/admin/exams/${id}`, examData);
-      console.log('Update exam response:', response.data);
-      return response.data;
+      const response = await examApi.updateExam(id, examData);
+      console.log('Update exam response:', response);
+      return response;
     } catch (error) {
       console.error('Error updating exam:', error);
       throw error;
     }
   },
 
-  // Add a new part to an exam
+  /**
+   * Xóa bài thi
+   */
+  deleteExam: async (id) => {
+    try {
+      console.log('Deleting exam with ID:', id);
+      const response = await examApi.deleteExam(id);
+      console.log('Delete response:', response);
+      return response;
+    } catch (error) {
+      console.error('Error deleting exam:', error);
+      throw error;
+    }
+  },
+
+  // ========== QUẢN LÝ PARTS (PHẦN THI) ==========
+  
+  /**
+   * Thêm Part cho bài thi
+   */
   addPart: async (examId, partData) => {
     try {
       console.log('Adding part to exam:', examId, partData);
-      const response = await api.post(`/admin/exams/${examId}/parts`, partData);
-      console.log('Add part response:', response.data);
-      return response.data;
+      const response = await examApi.addPart(examId, partData);
+      console.log('Add part response:', response);
+      return response;
     } catch (error) {
       console.error('Error adding part:', error);
       throw error;
     }
   },
 
-  // Update a part
+  /**
+   * Cập nhật Part
+   */
   updatePart: async (partId, partData) => {
     try {
       console.log('Updating part:', partId, partData);
-      const response = await api.put(`/admin/exams/parts/${partId}`, partData);
-      console.log('Update part response:', response.data);
-      return response.data;
+      const response = await examApi.updatePart(partId, partData);
+      console.log('Update part response:', response);
+      return response;
     } catch (error) {
       console.error('Error updating part:', error);
       throw error;
     }
   },
 
-  // Delete a part
+  /**
+   * Xóa Part
+   */
   deletePart: async (partId) => {
     try {
-      const response = await api.delete(`/admin/exams/parts/${partId}`);
-      return response.data;
+      const response = await examApi.deletePart(partId);
+      return response;
     } catch (error) {
       console.error('Error deleting part:', error);
       throw error;
     }
   },
 
-  // Add a new question to a part
+  // ========== QUẢN LÝ QUESTIONS (CÂU HỎI) ==========
+  
+  /**
+   * Thêm câu hỏi cho Part
+   */
   addQuestion: async (partId, questionData) => {
     try {
       console.log('Adding question to part:', partId, questionData);
-      const response = await api.post(`/admin/exams/parts/${partId}/questions`, questionData);
-      console.log('Add question response:', response.data);
-      return response.data;
+      const response = await examApi.addQuestion(partId, questionData);
+      console.log('Add question response:', response);
+      return response;
     } catch (error) {
       console.error('Error adding question:', error);
       throw error;
     }
   },
 
-  // Update a question
+  /**
+   * Cập nhật câu hỏi
+   */
   updateQuestion: async (questionId, questionData) => {
     try {
       console.log('Updating question:', questionId, questionData);
-      const response = await api.put(`/admin/exams/questions/${questionId}`, questionData);
-      console.log('Update question response:', response.data);
-      return response.data;
+      const response = await examApi.updateQuestion(questionId, questionData);
+      console.log('Update question response:', response);
+      return response;
     } catch (error) {
       console.error('Error updating question:', error);
       throw error;
     }
   },
 
-  // Delete a question
+  /**
+   * Xóa câu hỏi
+   */
   deleteQuestion: async (questionId) => {
     try {
-      const response = await api.delete(`/admin/exams/questions/${questionId}`);
-      return response.data;
+      const response = await examApi.deleteQuestion(questionId);
+      return response;
     } catch (error) {
       console.error('Error deleting question:', error);
       throw error;
     }
   },
 
-  uploadFileAndUpdateQuestion: async (questionId, file, fileType) => {
-  try {
-    console.log(`Bắt đầu upload ${fileType} lên Azure Storage cho câu hỏi:`, questionId);
-
-    // Tạo form data
-    const formData = new FormData();
-    formData.append('file', file);
-
-    // Chọn endpoint tương ứng
-    const endpoint =
-      fileType === 'image'
-        ? `/admin/exams/questions/${questionId}/upload-image`
-        : fileType === 'audio'
-          ? `/admin/exams/questions/${questionId}/upload-audio`
-          : null;
-
-    if (!endpoint) {
-      throw new Error('Loại file không được hỗ trợ');
-    }
-
-    console.log(`Sử dụng endpoint: ${endpoint}`);
-
-    // Gửi request lên backend (đã có middleware update Azure Storage)
-  const response = await api.post(endpoint, formData);
-
-    console.log(`Upload ${fileType} và cập nhật câu hỏi thành công:`, response.data);
-
-    return {
-      url: response.data[fileType + 'Url'],
-      questionData: response.data,
-    };
-  } catch (error) {
-    console.error(`Lỗi khi upload ${fileType} và cập nhật câu hỏi:`, error);
-    throw error;
-  }
-},
-// =====================
-  // Toggle exam active status
-  toggleExamActive: async (id) => {
+  // ========== UPLOAD MEDIA ==========
+  
+  /**
+   * Upload hình ảnh cho câu hỏi
+   */
+  uploadImage: async (file) => {
     try {
-      const response = await api.patch(`/admin/exams/${id}/toggle-active`);
-      return response.data;
+      console.log('Uploading image:', file.name);
+      const response = await examApi.uploadImage(file);
+      console.log('Upload image response:', response);
+      return response;
     } catch (error) {
-      console.error('Error toggling exam status:', error);
+      console.error('Error uploading image:', error);
       throw error;
     }
   },
 
-  // Duplicate exam
-  duplicateExam: async (id) => {{/* Right Content - Course Card */}
+  /**
+   * Upload audio cho câu hỏi listening
+   */
+  uploadAudio: async (file) => {
     try {
-      const response = await api.post(`/admin/exams/${id}/duplicate`);
-      return response.data;
+      console.log('Uploading audio:', file.name);
+      const response = await examApi.uploadAudio(file);
+      console.log('Upload audio response:', response);
+      return response;
     } catch (error) {
-      console.error('Error duplicating exam:', error);
+      console.error('Error uploading audio:', error);
       throw error;
     }
-  }
+  },
+
+  // ========== KẾT QUẢ & THỐNG KÊ ==========
+
+  /**
+   * Lấy kết quả thi của user với breakdown Reading/Listening
+   * @param {number} userId - ID của user
+   * @param {string} examType - 'READING' | 'LISTENING' | 'FULL_TEST' (optional)
+   */
+  getUserExamResults: async (userId, examType = null) => {
+    try {
+      const params = examType ? { examType } : {};
+      const response = await examApi.getUserExamResults(userId, params);
+      console.log('Fetched user exam results:', response);
+      return response;
+    } catch (error) {
+      console.error('Error fetching user exam results:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thống kê tổng quan cho dashboard
+   * @returns {Promise<Object>} Statistics overview
+   */
+  getStatisticsOverview: async () => {
+    try {
+      const response = await examApi.getStatisticsOverview();
+      console.log('Fetched statistics overview:', response);
+      return response;
+    } catch (error) {
+      console.error('Error fetching statistics overview:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy dữ liệu analytics cho dashboard charts
+   * @param {string} period - 'week' | 'month' | 'year'
+   * @returns {Promise<Object>} Dashboard analytics data
+   */
+  getDashboardAnalytics: async (period = 'month') => {
+    try {
+      const response = await examApi.getDashboardAnalytics(period);
+      console.log('Fetched dashboard analytics:', response);
+      return response;
+    } catch (error) {
+      console.error('Error fetching dashboard analytics:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Tìm kiếm kết quả thi với filters
+   * @param {Object} filters - { userName, examType, minScore, maxScore, startDate, endDate, page, size }
+   * @returns {Promise<Object>} Paginated exam results
+   */
+  searchExamResults: async (filters = {}) => {
+    try {
+      const params = {
+        ...filters,
+        page: filters.page || 0,
+        size: filters.size || 20,
+      };
+      const response = await examApi.searchExamResults(params);
+      console.log('Search exam results:', response);
+      return response;
+    } catch (error) {
+      console.error('Error searching exam results:', error);
+      throw error;
+    }
+  },
 };
 
 export default AdminExamService;

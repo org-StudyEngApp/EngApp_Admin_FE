@@ -4,18 +4,347 @@ import {
   Plus, 
   Edit, 
   Trash2, 
-  Copy, 
   Eye, 
   Search, 
-  Filter,
-  MoreVertical,
   Clock,
   FileText,
-  Users,
-  CheckCircle,
-  XCircle
+  Headphones,
+  BookOpen,
+  CheckCircle2
 } from 'lucide-react';
 import AdminExamService from '../../services/AdminExamService';
+
+const EXAM_TYPES = {
+  ALL: { value: '', label: 'Tất cả', icon: FileText },
+  READING: { value: 'READING', label: 'Reading', icon: BookOpen },
+  LISTENING: { value: 'LISTENING', label: 'Listening', icon: Headphones },
+  FULL_TEST: { value: 'FULL_TEST', label: 'Full Test', icon: CheckCircle2 }
+};
+
+const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
+
+const ExamManagement = () => {
+  const navigate = useNavigate();
+  const [exams, setExams] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedExamType, setSelectedExamType] = useState('');
+  const [selectedLevel, setSelectedLevel] = useState('');
+
+  useEffect(() => {
+    fetchExams();
+  }, [selectedExamType]);
+
+  const fetchExams = async () => {
+    setLoading(true);
+    try {
+      const response = await AdminExamService.getAllExams(selectedExamType || null);
+      setExams(response);
+    } catch (error) {
+      console.error('Error fetching exams:', error);
+      alert('Có lỗi xảy ra khi tải danh sách bài thi: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateExam = () => {
+    navigate('/admin/exams/create');
+  };
+
+  const handleEditExam = (examId) => {
+    navigate(`/admin/exams/${examId}/edit`);
+  };
+
+  const handleViewExam = (examId) => {
+    navigate(`/admin/exams/${examId}`);
+  };
+
+  const handleDeleteExam = async (examId) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa bài thi này? Hành động này không thể hoàn tác.')) {
+      try {
+        await AdminExamService.deleteExam(examId);
+        setExams(exams.filter(exam => exam.id !== examId));
+        alert('Xóa bài thi thành công!');
+      } catch (error) {
+        console.error('Error deleting exam:', error);
+        alert('Có lỗi xảy ra khi xóa bài thi: ' + error.message);
+      }
+    }
+  };
+
+  // Filter exams based on search and level
+  const filteredExams = exams.filter(exam => {
+    const matchesSearch = exam.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         exam.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesLevel = !selectedLevel || exam.level === selectedLevel;
+    return matchesSearch && matchesLevel;
+  });
+
+  const getExamTypeInfo = (examType) => {
+    return EXAM_TYPES[examType] || EXAM_TYPES.READING;
+  };
+
+  const getExamTypeColor = (examType) => {
+    switch (examType) {
+      case 'READING':
+        return 'bg-blue-100 text-blue-800';
+      case 'LISTENING':
+        return 'bg-purple-100 text-purple-800';
+      case 'FULL_TEST':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getLevelColor = (level) => {
+    switch (level) {
+      case 'Beginner':
+        return 'bg-green-100 text-green-800';
+      case 'Intermediate':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'Advanced':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <div className="p-6">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Quản lý Bài thi TOEIC</h1>
+        <p className="text-gray-600">Quản lý bài thi Reading, Listening và Full Test</p>
+      </div>
+
+      {/* Filters and Actions */}
+      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+          {/* Search */}
+          <div className="flex-1 w-full lg:w-auto">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm bài thi..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Exam Type Filter */}
+          <div className="flex gap-2 flex-wrap">
+            {Object.entries(EXAM_TYPES).map(([key, type]) => {
+              const Icon = type.icon;
+              const isActive = selectedExamType === type.value;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setSelectedExamType(type.value)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    isActive 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="font-medium">{type.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Level Filter */}
+          <select
+            value={selectedLevel}
+            onChange={(e) => setSelectedLevel(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Tất cả cấp độ</option>
+            {LEVELS.map(level => (
+              <option key={level} value={level}>{level}</option>
+            ))}
+          </select>
+
+          {/* Create Button */}
+          <button
+            onClick={handleCreateExam}
+            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+          >
+            <Plus className="w-5 h-5" />
+            <span className="font-medium">Tạo bài thi</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 text-sm">Tổng số bài thi</p>
+              <p className="text-2xl font-bold text-gray-900">{exams.length}</p>
+            </div>
+            <FileText className="w-8 h-8 text-blue-600" />
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 text-sm">Reading</p>
+              <p className="text-2xl font-bold text-blue-600">
+                {exams.filter(e => e.examType === 'READING').length}
+              </p>
+            </div>
+            <BookOpen className="w-8 h-8 text-blue-600" />
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 text-sm">Listening</p>
+              <p className="text-2xl font-bold text-purple-600">
+                {exams.filter(e => e.examType === 'LISTENING').length}
+              </p>
+            </div>
+            <Headphones className="w-8 h-8 text-purple-600" />
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 text-sm">Full Test</p>
+              <p className="text-2xl font-bold text-green-600">
+                {exams.filter(e => e.examType === 'FULL_TEST').length}
+              </p>
+            </div>
+            <CheckCircle2 className="w-8 h-8 text-green-600" />
+          </div>
+        </div>
+      </div>
+
+      {/* Exams List */}
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Đang tải...</p>
+          </div>
+        ) : filteredExams.length === 0 ? (
+          <div className="text-center py-12">
+            <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-600 text-lg">Không tìm thấy bài thi nào</p>
+            <button
+              onClick={handleCreateExam}
+              className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+            >
+              Tạo bài thi đầu tiên
+            </button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tiêu đề
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Loại
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Cấp độ
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Thời gian
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Số phần
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Thao tác
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredExams.map((exam) => {
+                  const typeInfo = getExamTypeInfo(exam.examType);
+                  const Icon = typeInfo.icon;
+                  
+                  return (
+                    <tr key={exam.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{exam.title}</div>
+                          <div className="text-sm text-gray-500 line-clamp-1">
+                            {exam.description || 'Không có mô tả'}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getExamTypeColor(exam.examType)}`}>
+                          <Icon className="w-3 h-3" />
+                          {typeInfo.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${getLevelColor(exam.level)}`}>
+                          {exam.level}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1 text-sm text-gray-900">
+                          <Clock className="w-4 h-4 text-gray-400" />
+                          {exam.durationTimes} phút
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-gray-900">
+                          {exam.parts?.length || 0} phần
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleViewExam(exam.id)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Xem chi tiết"
+                          >
+                            <Eye className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleEditExam(exam.id)}
+                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            title="Chỉnh sửa"
+                          >
+                            <Edit className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteExam(exam.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Xóa"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ExamManagement;
 
 const ExamManagement = () => {
   const navigate = useNavigate();

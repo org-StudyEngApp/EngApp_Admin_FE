@@ -1,0 +1,822 @@
+{
+	"info": {
+		"_postman_id": "admin-exam-management-2026",
+		"name": "TOEIC Admin - Quản lý Bài Thi",
+		"description": "Collection cho Admin để tạo và quản lý bài thi TOEIC (Reading, Listening, Full Test)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. QUẢN LÝ BÀI THI",
+			"item": [
+				{
+					"name": "1.1. Lấy tất cả bài thi (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams"]
+						},
+						"description": "Lấy danh sách tất cả bài thi bao gồm cả inactive"
+					}
+				},
+				{
+					"name": "1.2. Lọc bài thi Reading (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams?examType=READING",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams"],
+							"query": [
+								{
+									"key": "examType",
+									"value": "READING"
+								}
+							]
+						},
+						"description": "Lọc chỉ bài thi Reading"
+					}
+				},
+				{
+					"name": "1.3. Lọc bài thi Listening (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams?examType=LISTENING",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams"],
+							"query": [
+								{
+									"key": "examType",
+									"value": "LISTENING"
+								}
+							]
+						},
+						"description": "Lọc chỉ bài thi Listening"
+					}
+				},
+				{
+					"name": "1.4. Lọc đề thi thật (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams?examType=FULL_TEST",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams"],
+							"query": [
+								{
+									"key": "examType",
+									"value": "FULL_TEST"
+								}
+							]
+						},
+						"description": "Lọc chỉ đề thi thật"
+					}
+				},
+				{
+					"name": "1.5. Lấy chi tiết bài thi để edit",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/{{exam_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "{{exam_id}}"]
+						},
+						"description": "Lấy chi tiết đầy đủ để chỉnh sửa bài thi"
+					}
+				},
+				{
+					"name": "1.6. Tạo bài thi Reading mới",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"TOEIC Reading Practice Test 1\",\n  \"description\": \"Bài thi luyện kỹ năng đọc TOEIC với 30 câu hỏi\",\n  \"level\": \"Intermediate\",\n  \"examType\": \"READING\",\n  \"durationTimes\": 75,\n  \"instructions\": \"Đọc kỹ đề bài trước khi trả lời. Bạn có 75 phút để hoàn thành bài thi.\",\n  \"requirements\": \"Đã nắm vững ngữ pháp cơ bản và có vốn từ vựng khoảng 1500-2000 từ.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams"]
+						},
+						"description": "Tạo bài thi Reading mới"
+					}
+				},
+				{
+					"name": "1.7. Tạo bài thi Listening mới",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"TOEIC Listening Practice Test 1\",\n  \"description\": \"Bài thi luyện kỹ năng nghe TOEIC với 4 parts\",\n  \"level\": \"Intermediate\",\n  \"examType\": \"LISTENING\",\n  \"durationTimes\": 45,\n  \"instructions\": \"Nghe kỹ audio và chọn đáp án đúng. Mỗi đoạn audio chỉ phát 1 lần.\",\n  \"requirements\": \"Cần tai nghe hoặc loa tốt. Làm bài trong môi trường yên tĩnh.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams"]
+						},
+						"description": "Tạo bài thi Listening mới"
+					}
+				},
+				{
+					"name": "1.8. Tạo đề thi thật (Full Test)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"TOEIC Full Test 2024 - Đề 01\",\n  \"description\": \"Đề thi thật mô phỏng kỳ thi TOEIC chính thức với 200 câu hỏi (7 parts)\",\n  \"level\": \"Advanced\",\n  \"examType\": \"FULL_TEST\",\n  \"durationTimes\": 120,\n  \"instructions\": \"Đề thi gồm 2 phần: Listening (100 câu) và Reading (100 câu). Tổng thời gian: 120 phút. Không được quay lại phần Listening sau khi đã chuyển sang Reading.\",\n  \"requirements\": \"Chuẩn bị tai nghe, môi trường yên tĩnh. Nên làm bài vào buổi sáng khi tinh thần tỉnh táo.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams"]
+						},
+						"description": "Tạo đề thi thật TOEIC (Full Test)"
+					}
+				},
+				{
+					"name": "1.9. Cập nhật thông tin bài thi",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"TOEIC Reading Practice Test 1 - Updated\",\n  \"description\": \"Bài thi luyện kỹ năng đọc TOEIC (đã cập nhật)\",\n  \"level\": \"Advanced\",\n  \"examType\": \"READING\",\n  \"durationTimes\": 90,\n  \"instructions\": \"Đọc kỹ đề bài. Thời gian làm bài: 90 phút.\",\n  \"requirements\": \"Đã nắm vững ngữ pháp nâng cao.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/{{exam_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "{{exam_id}}"]
+						},
+						"description": "Cập nhật thông tin của bài thi"
+					}
+				},
+				{
+					"name": "1.10. Xóa bài thi",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/{{exam_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "{{exam_id}}"]
+						},
+						"description": "Xóa bài thi (sẽ xóa cả parts và questions)"
+					}
+				}
+			],
+			"description": "Các API quản lý bài thi"
+		},
+		{
+			"name": "2. QUẢN LÝ PARTS (PHẦN THI)",
+			"item": [
+				{
+					"name": "2.1. Thêm Part cho bài thi Reading",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Part 5: Incomplete Sentences\",\n  \"description\": \"Chọn từ/cụm từ phù hợp để hoàn thành câu\",\n  \"instructions\": \"Đọc kỹ câu và chọn đáp án đúng nhất trong 4 lựa chọn A, B, C, D\",\n  \"timeLimit\": 15\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/{{exam_id}}/parts",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "{{exam_id}}", "parts"]
+						},
+						"description": "Thêm Part mới cho bài thi"
+					}
+				},
+				{
+					"name": "2.2. Thêm Part cho bài thi Listening",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Part 1: Photographs\",\n  \"description\": \"Nghe và chọn mô tả phù hợp nhất với hình ảnh\",\n  \"instructions\": \"Bạn sẽ nghe 4 câu mô tả về hình ảnh. Chọn câu mô tả đúng nhất.\",\n  \"timeLimit\": 10\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/{{exam_id}}/parts",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "{{exam_id}}", "parts"]
+						},
+						"description": "Thêm Part Listening"
+					}
+				},
+				{
+					"name": "2.3. Cập nhật Part",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Part 5: Grammar & Vocabulary\",\n  \"description\": \"Ngữ pháp và từ vựng\",\n  \"instructions\": \"Chọn đáp án đúng\",\n  \"timeLimit\": 20\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/parts/{{part_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "parts", "{{part_id}}"]
+						},
+						"description": "Cập nhật thông tin Part"
+					}
+				},
+				{
+					"name": "2.4. Xóa Part",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/parts/{{part_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "parts", "{{part_id}}"]
+						},
+						"description": "Xóa Part (sẽ xóa cả questions trong part)"
+					}
+				}
+			],
+			"description": "Các API quản lý Parts (Phần thi)"
+		},
+		{
+			"name": "3. QUẢN LÝ QUESTIONS (CÂU HỎI)",
+			"item": [
+				{
+					"name": "3.1. Thêm câu hỏi Reading (Text)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"questionText\": \"The company _____ a new product line next month.\",\n  \"questionType\": \"MULTIPLE_CHOICE\",\n  \"option\": \"[\\\"A. launch\\\", \\\"B. launches\\\", \\\"C. will launch\\\", \\\"D. launched\\\"]\",\n  \"correctAnswer\": \"C\",\n  \"explanation\": \"Dùng 'will launch' vì có trạng từ chỉ tương lai 'next month'\",\n  \"points\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/parts/{{part_id}}/questions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "parts", "{{part_id}}", "questions"]
+						},
+						"description": "Thêm câu hỏi Reading dạng text"
+					}
+				},
+				{
+					"name": "3.2. Thêm câu hỏi Listening (có audio)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"questionText\": \"What does the man suggest?\",\n  \"questionType\": \"LISTENING\",\n  \"option\": \"[\\\"A. Going to the restaurant\\\", \\\"B. Ordering takeout\\\", \\\"C. Cooking at home\\\", \\\"D. Skipping dinner\\\"]\",\n  \"correctAnswer\": \"B\",\n  \"explanation\": \"Người đàn ông gợi ý đặt đồ ăn mang về (takeout)\",\n  \"audioUrl\": \"https://example.com/audio/part2_q1.mp3\",\n  \"points\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/parts/{{part_id}}/questions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "parts", "{{part_id}}", "questions"]
+						},
+						"description": "Thêm câu hỏi Listening có audio"
+					}
+				},
+				{
+					"name": "3.3. Thêm câu hỏi có hình ảnh",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"questionText\": \"Look at the picture. What are the people doing?\",\n  \"questionType\": \"PHOTO_DESCRIPTION\",\n  \"option\": \"[\\\"A. They are sitting\\\", \\\"B. They are standing\\\", \\\"C. They are walking\\\", \\\"D. They are running\\\"]\",\n  \"correctAnswer\": \"A\",\n  \"explanation\": \"Trong hình, mọi người đang ngồi\",\n  \"imageUrl\": \"https://example.com/images/part1_photo1.jpg\",\n  \"audioUrl\": \"https://example.com/audio/part1_q1.mp3\",\n  \"points\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/parts/{{part_id}}/questions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "parts", "{{part_id}}", "questions"]
+						},
+						"description": "Thêm câu hỏi có cả hình ảnh và audio"
+					}
+				},
+				{
+					"name": "3.4. Thêm câu hỏi Reading Comprehension",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"questionText\": \"According to the passage, what is the main purpose of the meeting?\\n\\nPassage: XYZ Corporation will hold its annual shareholders meeting on March 15th at the company headquarters. The meeting will discuss financial results, future plans, and elect new board members.\",\n  \"questionType\": \"COMPREHENSION\",\n  \"option\": \"[\\\"A. To discuss financial results only\\\", \\\"B. To elect board members only\\\", \\\"C. To discuss results and elect members\\\", \\\"D. To celebrate company anniversary\\\"]\",\n  \"correctAnswer\": \"C\",\n  \"explanation\": \"Đoạn văn nói họp sẽ bàn về kết quả tài chính, kế hoạch tương lai VÀ bầu thành viên ban giám đốc mới\",\n  \"points\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/parts/{{part_id}}/questions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "parts", "{{part_id}}", "questions"]
+						},
+						"description": "Thêm câu hỏi đọc hiểu có đoạn văn"
+					}
+				},
+				{
+					"name": "3.5. Cập nhật câu hỏi",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"questionText\": \"The company _____ a new product line next year.\",\n  \"questionType\": \"MULTIPLE_CHOICE\",\n  \"option\": \"[\\\"A. launch\\\", \\\"B. launches\\\", \\\"C. will launch\\\", \\\"D. has launched\\\"]\",\n  \"correctAnswer\": \"C\",\n  \"explanation\": \"Sử dụng 'will launch' với trạng từ 'next year'\",\n  \"points\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/questions/{{question_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "questions", "{{question_id}}"]
+						},
+						"description": "Cập nhật nội dung câu hỏi"
+					}
+				},
+				{
+					"name": "3.6. Xóa câu hỏi",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/questions/{{question_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "questions", "{{question_id}}"]
+						},
+						"description": "Xóa câu hỏi"
+					}
+				}
+			],
+			"description": "Các API quản lý Questions (Câu hỏi)"
+		},
+		{
+			"name": "4. UPLOAD MEDIA (Azure Storage)",
+			"item": [
+				{
+					"name": "4.1. Upload hình ảnh cho câu hỏi",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/path/to/image.jpg",
+									"description": "Chọn file ảnh (JPG, PNG, GIF). Hệ thống sẽ upload lên Azure Blob Storage"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/questions/{{question_id}}/upload-image",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "questions", "{{question_id}}", "upload-image"]
+						},
+						"description": "Upload hình ảnh cho câu hỏi lên Azure Blob Storage.\nFile sẽ được lưu trong folder 'exam-images/' với tên unique.\nAPI sẽ tự động cập nhật imageUrl cho câu hỏi.\n\nResponse: { \"imageUrl\": \"https://...blob.core.windows.net/...\" }"
+					}
+				},
+				{
+					"name": "4.2. Upload audio cho câu hỏi",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/path/to/audio.mp3",
+									"description": "Chọn file audio (MP3, WAV, OGG). Hệ thống sẽ upload lên Azure Blob Storage"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/questions/{{question_id}}/upload-audio",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "questions", "{{question_id}}", "upload-audio"]
+						},
+						"description": "Upload file audio cho câu hỏi listening lên Azure Blob Storage.\nFile sẽ được lưu trong folder 'exam-audio/' với tên unique.\nAPI sẽ tự động cập nhật audioUrl cho câu hỏi.\n\nResponse: { \"audioUrl\": \"https://...blob.core.windows.net/...\" }"
+					}
+				}
+			],
+			"description": "Upload media files lên Azure Blob Storage và tự động cập nhật vào câu hỏi"
+		},
+		{
+			"name": "5. WORKFLOW MẪU",
+			"item": [
+				{
+					"name": "5.1. [DEMO] Tạo bài thi Reading hoàn chỉnh",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"TOEIC Reading Test - Beginner Level\",\n  \"description\": \"Bài thi Reading dành cho người mới bắt đầu với 20 câu hỏi\",\n  \"level\": \"Beginner\",\n  \"examType\": \"READING\",\n  \"durationTimes\": 30,\n  \"instructions\": \"Bài thi gồm 2 phần: Part 5 (Grammar) và Part 7 (Reading). Thời gian: 30 phút.\",\n  \"requirements\": \"Vốn từ vựng cơ bản 500-800 từ\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams"]
+						},
+						"description": "Bước 1: Tạo bài thi\nSau đó dùng exam_id để thêm parts và questions"
+					}
+				},
+				{
+					"name": "5.2. [DEMO] Tạo Full Test hoàn chỉnh",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"TOEIC Full Test 2024 - Official Format\",\n  \"description\": \"Đề thi mô phỏng chính thức TOEIC với 7 parts (200 câu hỏi)\",\n  \"level\": \"Advanced\",\n  \"examType\": \"FULL_TEST\",\n  \"durationTimes\": 120,\n  \"instructions\": \"LISTENING (45 phút - 100 câu):\\n- Part 1: Photographs (6 câu)\\n- Part 2: Question-Response (25 câu)\\n- Part 3: Conversations (39 câu)\\n- Part 4: Talks (30 câu)\\n\\nREADING (75 phút - 100 câu):\\n- Part 5: Incomplete Sentences (30 câu)\\n- Part 6: Text Completion (16 câu)\\n- Part 7: Reading Comprehension (54 câu)\\n\\nLưu ý: Không được quay lại phần Listening sau khi bắt đầu Reading.\",\n  \"requirements\": \"Tai nghe tốt, môi trường yên tĩnh, 2 giờ liên tục không bị gián đoạn\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams"]
+						},
+						"description": "Tạo Full Test theo format chính thức TOEIC"
+					}
+				}
+			],
+			"description": "Workflow mẫu để tạo bài thi hoàn chỉnh"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Auto save exam_id after creating exam",
+					"if (pm.response.code === 201 && pm.response.json().id) {",
+					"    pm.collectionVariables.set('exam_id', pm.response.json().id);",
+					"    console.log('✅ Exam created with ID: ' + pm.response.json().id);",
+					"}",
+					"",
+					"// Auto save part_id after creating part",
+					"if (pm.request.url.path.includes('parts') && pm.response.json().id) {",
+					"    pm.collectionVariables.set('part_id', pm.response.json().id);",
+					"    console.log('✅ Part created with ID: ' + pm.response.json().id);",
+					"}",
+					"",
+					"// Auto save question_id after creating question",
+					"if (pm.request.url.path.includes('questions') && pm.response.json().id) {",
+					"    pm.collectionVariables.set('question_id', pm.response.json().id);",
+					"    console.log('✅ Question created with ID: ' + pm.response.json().id);",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "exam_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "part_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "question_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "1",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "2. KẾT QUẢ & THỐNG KÊ",
+			"item": [
+				{
+					"name": "2.1. Lấy kết quả thi của user",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/results/user/{{user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "results", "user", "{{user_id}}"]
+						},
+						"description": "Lấy tất cả kết quả thi của một user. Response bao gồm breakdown Reading/Listening cho Full Test."
+					},
+					"response": [
+						{
+							"name": "Success - All Results",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/v1/admin/exams/results/user/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "v1", "admin", "exams", "results", "user", "1"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"body": "[\n  {\n    \"resultId\": 101,\n    \"userId\": 1,\n    \"userName\": \"Nguyễn Văn A\",\n    \"userEmail\": \"user@example.com\",\n    \"examId\": 5,\n    \"examTitle\": \"TOEIC Full Test 990 - Test 1\",\n    \"examType\": \"FULL_TEST\",\n    \"testDate\": \"2026-01-02T10:30:00\",\n    \"totalScore\": 85.5,\n    \"totalCorrect\": 171,\n    \"totalQuestions\": 200,\n    \"totalIncorrect\": 29,\n    \"accuracy\": 85.5,\n    \"readingBreakdown\": {\n      \"score\": 87.0,\n      \"correct\": 87,\n      \"total\": 100,\n      \"accuracy\": 87.0\n    },\n    \"listeningBreakdown\": {\n      \"score\": 84.0,\n      \"correct\": 84,\n      \"total\": 100,\n      \"accuracy\": 84.0\n    }\n  },\n  {\n    \"resultId\": 95,\n    \"userId\": 1,\n    \"userName\": \"Nguyễn Văn A\",\n    \"userEmail\": \"user@example.com\",\n    \"examId\": 2,\n    \"examTitle\": \"Reading Practice - Part 7\",\n    \"examType\": \"READING\",\n    \"testDate\": \"2026-01-01T14:20:00\",\n    \"totalScore\": 90.0,\n    \"totalCorrect\": 45,\n    \"totalQuestions\": 50,\n    \"totalIncorrect\": 5,\n    \"accuracy\": 90.0,\n    \"readingBreakdown\": null,\n    \"listeningBreakdown\": null\n  }\n]"
+						}
+					]
+				},
+				{
+					"name": "2.2. Lọc kết quả Full Test của user",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/results/user/{{user_id}}?examType=FULL_TEST",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "results", "user", "{{user_id}}"],
+							"query": [
+								{
+									"key": "examType",
+									"value": "FULL_TEST"
+								}
+							]
+						},
+						"description": "Chỉ lấy kết quả Full Test với breakdown Reading/Listening"
+					},
+					"response": []
+				},
+				{
+					"name": "2.3. Lấy tổng quan thống kê",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/statistics/overview",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "statistics", "overview"]
+						},
+						"description": "Dashboard overview: total users, exams, averages, top performers, recent activity"
+					},
+					"response": [
+						{
+							"name": "Success - Statistics Overview",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/v1/admin/exams/statistics/overview",
+									"host": ["{{base_url}}"],
+									"path": ["api", "v1", "admin", "exams", "statistics", "overview"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"body": "{\n  \"totalUsers\": 1250,\n  \"totalExamsTaken\": 3480,\n  \"examsByType\": {\n    \"READING\": 1450,\n    \"LISTENING\": 1320,\n    \"FULL_TEST\": 710\n  },\n  \"averageScores\": {\n    \"reading\": 78.5,\n    \"listening\": 75.2,\n    \"fullTest\": 76.8,\n    \"overall\": 77.1\n  },\n  \"topPerformers\": [\n    {\n      \"userId\": 42,\n      \"userName\": \"Trần Thị B\",\n      \"averageScore\": 92.5,\n      \"totalExams\": 15\n    },\n    {\n      \"userId\": 18,\n      \"userName\": \"Lê Văn C\",\n      \"averageScore\": 89.3,\n      \"totalExams\": 22\n    },\n    {\n      \"userId\": 99,\n      \"userName\": \"Phạm Thị D\",\n      \"averageScore\": 87.1,\n      \"totalExams\": 18\n    },\n    {\n      \"userId\": 5,\n      \"userName\": \"Hoàng Văn E\",\n      \"averageScore\": 85.6,\n      \"totalExams\": 12\n    },\n    {\n      \"userId\": 77,\n      \"userName\": \"Ngô Thị F\",\n      \"averageScore\": 84.2,\n      \"totalExams\": 20\n    }\n  ],\n  \"recentActivity\": [\n    {\n      \"resultId\": 3480,\n      \"userName\": \"Nguyễn Văn G\",\n      \"examTitle\": \"TOEIC Full Test 990 - Test 5\",\n      \"score\": 82.5,\n      \"testDate\": \"2026-01-02T16:45:00\"\n    },\n    {\n      \"resultId\": 3479,\n      \"userName\": \"Trần Thị H\",\n      \"examTitle\": \"Reading Practice - Part 6\",\n      \"score\": 90.0,\n      \"testDate\": \"2026-01-02T15:30:00\"\n    },\n    {\n      \"resultId\": 3478,\n      \"userName\": \"Lê Văn I\",\n      \"examTitle\": \"Listening Practice - Part 3\",\n      \"score\": 75.0,\n      \"testDate\": \"2026-01-02T14:15:00\"\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "2.4. Lấy dữ liệu analytics theo tuần",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/analytics/dashboard?period=week",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "analytics", "dashboard"],
+							"query": [
+								{
+									"key": "period",
+									"value": "week"
+								}
+							]
+						},
+						"description": "Analytics data grouped by weeks for charts"
+					},
+					"response": [
+						{
+							"name": "Success - Weekly Analytics",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/v1/admin/exams/analytics/dashboard?period=week",
+									"host": ["{{base_url}}"],
+									"path": ["api", "v1", "admin", "exams", "analytics", "dashboard"],
+									"query": [
+										{
+											"key": "period",
+											"value": "week"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"body": "{\n  \"period\": \"week\",\n  \"examTrends\": {\n    \"labels\": [\"Week 1\", \"Week 2\", \"Week 3\", \"Week 4\"],\n    \"readingExams\": [45, 52, 48, 55],\n    \"listeningExams\": [38, 42, 50, 47],\n    \"fullTestExams\": [22, 25, 28, 30]\n  },\n  \"averageScoreTrends\": {\n    \"labels\": [\"Week 1\", \"Week 2\", \"Week 3\", \"Week 4\"],\n    \"readingScores\": [76.5, 78.2, 79.0, 80.1],\n    \"listeningScores\": [73.8, 75.5, 76.2, 77.0],\n    \"fullTestScores\": [75.0, 76.8, 77.5, 78.2]\n  },\n  \"userEngagement\": {\n    \"activeUsers\": 350,\n    \"newUsers\": 45,\n    \"returningUsers\": 305\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "2.5. Lấy dữ liệu analytics theo tháng",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/analytics/dashboard?period=month",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "analytics", "dashboard"],
+							"query": [
+								{
+									"key": "period",
+									"value": "month"
+								}
+							]
+						},
+						"description": "Analytics data grouped by months for charts"
+					},
+					"response": []
+				},
+				{
+					"name": "2.6. Tìm kiếm kết quả thi",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/exams/results/search?userName=Nguyen&examType=FULL_TEST&minScore=80&maxScore=100&page=0&size=20",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "exams", "results", "search"],
+							"query": [
+								{
+									"key": "userName",
+									"value": "Nguyen",
+									"description": "Optional - Search by user name"
+								},
+								{
+									"key": "examType",
+									"value": "FULL_TEST",
+									"description": "Optional - READING, LISTENING, FULL_TEST"
+								},
+								{
+									"key": "minScore",
+									"value": "80",
+									"description": "Optional - Minimum score"
+								},
+								{
+									"key": "maxScore",
+									"value": "100",
+									"description": "Optional - Maximum score"
+								},
+								{
+									"key": "startDate",
+									"value": "2026-01-01T00:00:00",
+									"description": "Optional - ISO date",
+									"disabled": true
+								},
+								{
+									"key": "endDate",
+									"value": "2026-01-31T23:59:59",
+									"description": "Optional - ISO date",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "0",
+									"description": "Page number (0-indexed)"
+								},
+								{
+									"key": "size",
+									"value": "20",
+									"description": "Page size"
+								}
+							]
+						},
+						"description": "Search and filter exam results with pagination"
+					},
+					"response": [
+						{
+							"name": "Success - Search Results",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/v1/admin/exams/results/search?userName=Nguyen&minScore=80",
+									"host": ["{{base_url}}"],
+									"path": ["api", "v1", "admin", "exams", "results", "search"],
+									"query": [
+										{
+											"key": "userName",
+											"value": "Nguyen"
+										},
+										{
+											"key": "minScore",
+											"value": "80"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"body": "{\n  \"content\": [\n    {\n      \"resultId\": 250,\n      \"userId\": 45,\n      \"userName\": \"Nguyễn Văn A\",\n      \"userEmail\": \"nguyenvana@example.com\",\n      \"examId\": 8,\n      \"examTitle\": \"TOEIC Full Test 990 - Test 3\",\n      \"examType\": \"FULL_TEST\",\n      \"testDate\": \"2026-01-01T10:00:00\",\n      \"totalScore\": 88.5,\n      \"totalCorrect\": 177,\n      \"totalQuestions\": 200,\n      \"totalIncorrect\": 23,\n      \"accuracy\": 88.5,\n      \"readingBreakdown\": {\n        \"score\": 90.0,\n        \"correct\": 90,\n        \"total\": 100,\n        \"accuracy\": 90.0\n      },\n      \"listeningBreakdown\": {\n        \"score\": 87.0,\n        \"correct\": 87,\n        \"total\": 100,\n        \"accuracy\": 87.0\n      }\n    },\n    {\n      \"resultId\": 198,\n      \"userId\": 123,\n      \"userName\": \"Nguyễn Thị B\",\n      \"userEmail\": \"nguyenthib@example.com\",\n      \"examId\": 15,\n      \"examTitle\": \"Reading Practice - Advanced\",\n      \"examType\": \"READING\",\n      \"testDate\": \"2025-12-28T14:30:00\",\n      \"totalScore\": 82.0,\n      \"totalCorrect\": 41,\n      \"totalQuestions\": 50,\n      \"totalIncorrect\": 9,\n      \"accuracy\": 82.0,\n      \"readingBreakdown\": null,\n      \"listeningBreakdown\": null\n    }\n  ],\n  \"totalElements\": 25,\n  \"totalPages\": 2,\n  \"size\": 20,\n  \"number\": 0\n}"
+						}
+					]
+				}
+			]
+		}
+	]
+}
