@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import userApi from '../api/userApi';
+import paymentApi from '../api/paymentApi';
 
 export const useUserManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterPremium, setFilterPremium] = useState('all');
+  const [filterPremiumType, setFilterPremiumType] = useState('all'); // monthly, yearly, expiring
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedUsers, setSelectedUsers] = useState([]);
@@ -21,7 +24,11 @@ export const useUserManagement = () => {
     overview: {
       totalUsers: 0,
       activeUsers: 0,
-      inactiveUsers: 0
+      inactiveUsers: 0,
+      premiumUsers: 0,
+      monthlyPremiumUsers: 0,
+      yearlyPremiumUsers: 0,
+      premiumExpiringSoon: 0
     },
     byRole: {
       admins: 0,
@@ -156,16 +163,78 @@ export const useUserManagement = () => {
     }
   };
 
+  const fetchUsersByPremium = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      let data;
+      const params = { page: currentPage, size: pageSize };
+      
+      // Call appropriate API based on premium filter type
+      if (filterPremium === 'premium') {
+        if (filterPremiumType === 'monthly') {
+          // Get Premium Monthly users
+          data = await userApi.getPremiumUsersByType('PREMIUM_MONTHLY', params);
+        } else if (filterPremiumType === 'yearly') {
+          // Get Premium Yearly users
+          data = await userApi.getPremiumUsersByType('PREMIUM_YEARLY', params);
+        } else if (filterPremiumType === 'expiring') {
+          // Get expiring premium users (< 7 days)
+          data = await userApi.getExpiringPremiumUsers(7, params);
+        } else {
+          // Get all premium users
+          data = await userApi.getAllPremiumUsers(params);
+        }
+      } else if (filterPremium === 'free') {
+        // Get all free users
+        data = await userApi.getAllFreeUsers(params);
+      } else {
+        // Get all users (default)
+        data = await userApi.getUsers(params);
+      }
+      
+      // axiosClient đã unwrap response, data chính là result
+      if (data && data.content) {
+        setUsers(data.content);
+        setTotalPages(data.totalPages);
+        setTotalElements(data.totalElements);
+      } else {
+        setUsers([]);
+        setTotalPages(0);
+        setTotalElements(0);
+      }
+    } catch (error) {
+      console.error('Lỗi khi lọc theo Premium:', error);
+      setError('Có lỗi xảy ra khi lọc theo Premium');
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchUserStats = async () => {
     try {
+      // Fetch user statistics
       const statsData = await userApi.getUserStatistics();
       
-      // axiosClient đã unwrap response, statsData chính là result
+      // Fetch payment statistics for premium info
+      const paymentStats = await paymentApi.getStatistics();
+      
+      console.log('Payment Stats Response:', paymentStats); // Debug log
+      
+      // axiosClient đã unwrap response, statsData và paymentStats chính là result
+      // Payment API trả về flat object, không có wrapper 'overview'
       setStats({
         overview: {
           totalUsers: statsData?.overview?.totalUsers || 0,
           activeUsers: statsData?.overview?.activeUsers || 0,
-          inactiveUsers: statsData?.overview?.inactiveUsers || 0
+          inactiveUsers: statsData?.overview?.inactiveUsers || 0,
+          // Get premium stats from payment API (flat structure)
+          premiumUsers: paymentStats?.totalPremiumUsers || paymentStats?.activePremiumUsers || 0,
+          monthlyPremiumUsers: paymentStats?.transactionsBySubscriptionType?.PREMIUM_MONTHLY || 0,
+          yearlyPremiumUsers: paymentStats?.transactionsBySubscriptionType?.PREMIUM_YEARLY || 0,
+          premiumExpiringSoon: paymentStats?.premiumExpiringSoon || 0
         },
         byRole: {
           admins: statsData?.byRole?.admins || 0,
@@ -176,6 +245,29 @@ export const useUserManagement = () => {
       });
     } catch (error) {
       console.error('Lỗi khi tải thống kê:', error);
+      // Fallback to user stats only if payment stats fail
+      try {
+        const statsData = await userApi.getUserStatistics();
+        setStats({
+          overview: {
+            totalUsers: statsData?.overview?.totalUsers || 0,
+            activeUsers: statsData?.overview?.activeUsers || 0,
+            inactiveUsers: statsData?.overview?.inactiveUsers || 0,
+            premiumUsers: 0,
+            monthlyPremiumUsers: 0,
+            yearlyPremiumUsers: 0,
+            premiumExpiringSoon: 0
+          },
+          byRole: {
+            admins: statsData?.byRole?.admins || 0,
+            contentManagers: statsData?.byRole?.contentManagers || 0,
+            deliveryManagers: statsData?.byRole?.deliveryManagers || 0,
+            regularUsers: statsData?.byRole?.regularUsers || 0
+          }
+        });
+      } catch (fallbackError) {
+        console.error('Lỗi khi tải thống kê fallback:', fallbackError);
+      }
     }
   };
 
@@ -290,6 +382,8 @@ export const useUserManagement = () => {
     setSearchTerm('');
     setFilterRole('all');
     setFilterStatus('all');
+    setFilterPremium('all');
+    setFilterPremiumType('all');
     setCurrentPage(0);
   };
 
@@ -307,10 +401,12 @@ export const useUserManagement = () => {
       fetchUsersByRole();
     } else if (filterStatus !== 'all') {
       fetchUsersByStatus();
+    } else if (filterPremium !== 'all') {
+      fetchUsersByPremium();
     } else {
       fetchUsers();
     }
-  }, [searchTerm, filterRole, filterStatus]);
+  }, [searchTerm, filterRole, filterStatus, filterPremium, filterPremiumType]);
 
   return {
     // States
@@ -320,6 +416,10 @@ export const useUserManagement = () => {
     setFilterRole,
     filterStatus,
     setFilterStatus,
+    filterPremium,
+    setFilterPremium,
+    filterPremiumType,
+    setFilterPremiumType,
     users,
     loading,
     selectedUsers,

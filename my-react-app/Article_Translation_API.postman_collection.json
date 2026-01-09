@@ -1,0 +1,184 @@
+{
+	"info": {
+		"name": "Article Translation API",
+		"description": "Test collection for Article Translation feature with Quota management",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Admin APIs",
+			"item": [
+				{
+					"name": "Admin - Pre-translate Article",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/articles/:articleId/translate",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "articles", ":articleId", "translate"],
+							"variable": [
+								{
+									"key": "articleId",
+									"value": "1",
+									"description": "ID of article to translate"
+								}
+							]
+						},
+						"description": "Admin dịch trước bài báo và lưu vào database. Bản dịch này miễn phí cho tất cả user."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User APIs",
+			"item": [
+				{
+					"name": "User - Get Stored Translation (FREE)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/articles/:articleId/translation/stored",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "articles", ":articleId", "translation", "stored"],
+							"variable": [
+								{
+									"key": "articleId",
+									"value": "1",
+									"description": "ID of article"
+								}
+							]
+						},
+						"description": "Lấy bản dịch có sẵn từ database (FREE - không tốn quota)"
+					},
+					"response": []
+				},
+				{
+					"name": "User - Get AI Translation (Quota Limited)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/articles/:articleId/translation/ai",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "articles", ":articleId", "translation", "ai"],
+							"variable": [
+								{
+									"key": "articleId",
+									"value": "1",
+									"description": "ID of article"
+								}
+							]
+						},
+						"description": "Dịch bài báo bằng AI (Gemini). Giới hạn 10 lần/ngày cho free user. Kết quả được cache lại."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Test Scenarios",
+			"item": [
+				{
+					"name": "Test 1 - Get Stored (Should return 404)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/articles/999/translation/stored",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "articles", "999", "translation", "stored"]
+						},
+						"description": "Test với article chưa có bản dịch - should return 404"
+					},
+					"response": []
+				},
+				{
+					"name": "Test 2 - AI Translate 1st time",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/articles/1/translation/ai",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "articles", "1", "translation", "ai"]
+						},
+						"description": "Lần đầu dịch - should call Gemini and cache. Quota: 9/10 remaining"
+					},
+					"response": []
+				},
+				{
+					"name": "Test 3 - Get Stored (Should return cached)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/articles/1/translation/stored",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "articles", "1", "translation", "stored"]
+						},
+						"description": "Sau khi AI translate, bản dịch đã được cache - should return immediately"
+					},
+					"response": []
+				},
+				{
+					"name": "Test 4 - Exceed Quota (Call 11 times)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/articles/2/translation/ai",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "articles", "2", "translation", "ai"]
+						},
+						"description": "Call this 11 times with different articleIds. The 11th should return 429 (Too Many Requests)"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "admin_token",
+			"value": "your_admin_jwt_token_here",
+			"type": "string"
+		},
+		{
+			"key": "user_token",
+			"value": "your_user_jwt_token_here",
+			"type": "string"
+		}
+	]
+}

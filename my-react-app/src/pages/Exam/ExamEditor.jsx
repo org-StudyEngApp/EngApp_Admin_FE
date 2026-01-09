@@ -7,7 +7,9 @@ import {
   BookOpen,
   Headphones,
   CheckCircle2,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Lock,
+  Unlock
 } from 'lucide-react';
 import PartEditor from '../../components/ExamEditor/PartEditor';
 import ImportQuestionsModal from '../../components/ExamEditor/ImportQuestionsModal';
@@ -30,6 +32,7 @@ const ExamEditor = () => {
     durationTimes: 60,
     instructions: '',
     requirements: '',
+    isLocked: false, // Default: public (tất cả truy cập được)
     parts: []
   });
   const [loading, setLoading] = useState(false);
@@ -86,7 +89,8 @@ const ExamEditor = () => {
         examType: exam.examType,
         durationTimes: exam.durationTimes,
         instructions: exam.instructions || '',
-        requirements: exam.requirements || ''
+        requirements: exam.requirements || '',
+        isLocked: exam.isLocked || false // Gửi lock status
       };
 
       let examId;
@@ -408,6 +412,47 @@ const ExamEditor = () => {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               min="1"
             />
+          </div>
+
+          {/* Lock Status - Premium Only */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Quyền truy cập
+            </label>
+            <button
+              type="button"
+              onClick={() => setExam({ ...exam, isLocked: !exam.isLocked })}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border-2 transition-all ${
+                exam.isLocked
+                  ? 'border-yellow-400 bg-gradient-to-r from-yellow-50 to-yellow-100'
+                  : 'border-green-400 bg-gradient-to-r from-green-50 to-green-100'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                {exam.isLocked ? (
+                  <>
+                    <div className="p-2 bg-yellow-200 rounded-lg">
+                      <Lock size={20} className="text-yellow-800" />
+                    </div>
+                    <div className="text-left">
+                      <div className="font-semibold text-yellow-900">🔒 Premium Only</div>
+                      <div className="text-xs text-yellow-700">Chỉ Premium users truy cập</div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="p-2 bg-green-200 rounded-lg">
+                      <Unlock size={20} className="text-green-800" />
+                    </div>
+                    <div className="text-left">
+                      <div className="font-semibold text-green-900">🔓 Public</div>
+                      <div className="text-xs text-green-700">Tất cả users truy cập được</div>
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="text-xs text-gray-500">Click để thay đổi</div>
+            </button>
           </div>
 
           {/* Description */}

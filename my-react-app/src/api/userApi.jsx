@@ -82,6 +82,58 @@ const userApi = {
   // Thống kê người dùng
   getUserStatistics: () => {
     return axiosClient.get('/admin/users/statistics');
+  },
+
+  // ==================== PREMIUM USER MANAGEMENT ====================
+  
+  /**
+   * Lấy tất cả Premium Users
+   * @param {Object} params - Pagination params
+   * @returns {Promise} Page of premium users
+   */
+  getAllPremiumUsers: (params = {}) => {
+    const { page = 0, size = 20, sort = 'createdAt,desc' } = params;
+    return axiosClient.get('/admin/users/premium', {
+      params: { page, size, sort }
+    });
+  },
+
+  /**
+   * Lọc Premium Users theo loại gói
+   * @param {string} subscriptionType - PREMIUM_MONTHLY hoặc PREMIUM_YEARLY
+   * @param {Object} params - Pagination params
+   * @returns {Promise} Page of premium users by type
+   */
+  getPremiumUsersByType: (subscriptionType, params = {}) => {
+    const { page = 0, size = 20, sort = 'createdAt,desc' } = params;
+    return axiosClient.get(`/admin/users/premium/${subscriptionType}`, {
+      params: { page, size, sort }
+    });
+  },
+
+  /**
+   * Lấy Premium Users sắp hết hạn
+   * @param {number} days - Số ngày sắp hết hạn (default: 7)
+   * @param {Object} params - Pagination params
+   * @returns {Promise} Page of expiring premium users
+   */
+  getExpiringPremiumUsers: (days = 7, params = {}) => {
+    const { page = 0, size = 20, sort = 'createdAt,desc' } = params;
+    return axiosClient.get('/admin/users/premium/expiring', {
+      params: { days, page, size, sort }
+    });
+  },
+
+  /**
+   * Lấy tất cả Free Users
+   * @param {Object} params - Pagination params
+   * @returns {Promise} Page of free users
+   */
+  getAllFreeUsers: (params = {}) => {
+    const { page = 0, size = 20, sort = 'createdAt,desc' } = params;
+    return axiosClient.get('/admin/users/free', {
+      params: { page, size, sort }
+    });
   }
 };
 

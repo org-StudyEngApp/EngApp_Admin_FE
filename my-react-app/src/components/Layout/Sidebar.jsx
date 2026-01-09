@@ -6,7 +6,8 @@ import {
   Users, 
   Settings, 
   BookOpen,
-  BarChart3
+  BarChart3,
+  CreditCard
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -15,8 +16,9 @@ const Sidebar = () => {
   const menuItems = [
     { path: '/admin', icon: Home, label: 'Dashboard' },
     { path: '/admin/exams', icon: FileText, label: 'Quản lý đề thi' },
-    { path: '/admin/users', icon: Users, label: 'Người dùng' },
     { path: '/admin/analytics', icon: BarChart3, label: 'Thống kê' },
+    { path: '/admin/users', icon: Users, label: 'Người dùng' },
+    { path: '/admin/payments', icon: CreditCard, label: 'Thanh toán' },
     { path: '/admin/settings', icon: Settings, label: 'Cài đặt' },
   ];
 

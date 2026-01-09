@@ -10,7 +10,11 @@ import {
   FileText,
   Headphones,
   BookOpen,
-  CheckCircle2
+  CheckCircle2,
+  Lock,
+  Unlock,
+  Copy,
+  MoreVertical
 } from 'lucide-react';
 import AdminExamService from '../../services/AdminExamService';
 
@@ -39,7 +43,17 @@ const ExamManagement = () => {
     setLoading(true);
     try {
       const response = await AdminExamService.getAllExams(selectedExamType || null);
-      setExams(response);
+      
+      // Debug: Kiểm tra xem backend có trả về isLocked không
+      console.log('📋 Sample exam from backend:', response[0]);
+      
+      // Đảm bảo tất cả exams có isLocked field
+      const examsWithLockStatus = response.map(exam => ({
+        ...exam,
+        isLocked: exam.isLocked !== undefined ? exam.isLocked : false
+      }));
+      
+      setExams(examsWithLockStatus);
     } catch (error) {
       console.error('Error fetching exams:', error);
       alert('Có lỗi xảy ra khi tải danh sách bài thi: ' + error.message);
@@ -70,6 +84,50 @@ const ExamManagement = () => {
         console.error('Error deleting exam:', error);
         alert('Có lỗi xảy ra khi xóa bài thi: ' + error.message);
       }
+    }
+  };
+
+  const handleToggleLockStatus = async (examId, currentLockStatus) => {
+    const newLockStatus = !currentLockStatus;
+    const confirmMessage = newLockStatus
+      ? '🔒 KHÓA BÀI THI - CHỈ PREMIUM\n\nBài thi sẽ chỉ có thể truy cập bởi:\n• Người dùng Premium\n• Người dùng Free được Admin grant quyền\n\nBạn có chắc chắn?'
+      : '🔓 MỞ KHÓA BÀI THI - PUBLIC\n\nBài thi sẽ công khai cho tất cả người dùng (kể cả FREE).\n\nBạn có chắc chắn?';
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      // Tìm exam trong state để lấy full data
+      const exam = exams.find(e => e.id === examId);
+      if (!exam) {
+        alert('Không tìm thấy bài thi');
+        return;
+      }
+
+      // Tạo payload full với tất cả fields bắt buộc
+      const payload = {
+        title: exam.title,
+        description: exam.description || '',
+        level: exam.level,
+        examType: exam.examType,
+        durationTimes: exam.durationTimes,
+        instructions: exam.instructions || '',
+        requirements: exam.requirements || '',
+        isLocked: newLockStatus // Update lock status
+      };
+
+      // Gọi updateExam với full payload
+      await AdminExamService.updateExam(examId, payload);
+      
+      setExams(exams.map(e =>
+        e.id === examId ? { ...e, isLocked: newLockStatus } : e
+      ));
+      alert(newLockStatus ? '✅ Đã khóa bài thi - Chỉ Premium truy cập được!' : '✅ Đã mở khóa bài thi - Công khai cho tất cả!');
+    } catch (error) {
+      console.error('Error toggling lock status:', error);
+      const errorMsg = error.response?.data?.message || error.message;
+      alert('Có lỗi xảy ra khi thay đổi trạng thái lock: ' + errorMsg);
     }
   };
 
@@ -640,6 +698,9 @@ const ExamManagement = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Thời gian
                 </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Quyền truy cập
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Cập nhật
                 </th>
@@ -692,6 +753,31 @@ const ExamManagement = () => {
                   <td className="px-6 py-4 text-sm text-gray-900 flex items-center gap-1">
                     <Clock size={14} />
                     {exam.durationTimes} phút
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => handleToggleLockStatus(exam.id, exam.isLocked)}
+                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                          exam.isLocked
+                            ? 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 hover:from-yellow-200 hover:to-yellow-300 border border-yellow-300'
+                            : 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 hover:from-green-200 hover:to-green-300 border border-green-300'
+                        }`}
+                        title={exam.isLocked ? 'Đang khóa - Chỉ Premium truy cập' : 'Công khai - Tất cả truy cập được'}
+                      >
+                        {exam.isLocked ? (
+                          <>
+                            <Lock size={12} />
+                            <span className="font-semibold">Premium Only</span>
+                          </>
+                        ) : (
+                          <>
+                            <Unlock size={12} />
+                            <span>Public</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {formatDate(exam.updatedAt)}

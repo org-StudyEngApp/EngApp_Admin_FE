@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Edit, 
@@ -10,9 +10,19 @@ import {
   Phone,
   Calendar,
   User,
-  Key
+  Key,
+  Crown,
+  Clock,
+  Info
 } from 'lucide-react';
 import { getUserRoles, getRoleColor, getStatusColor, getStatusText, formatDate } from '../../utils/userUtils';
+import { 
+  parsePremiumInfo, 
+  getSubscriptionShortLabel, 
+  getExpiryStatusBadge,
+  getSubscriptionBadge
+} from '../../utils/premiumUtils';
+import PremiumDetailModal from './PremiumDetailModal';
 
 const UserTableRow = ({ 
   user, 
@@ -24,8 +34,27 @@ const UserTableRow = ({
   setDeleteTargetId,
   setShowDeleteModal
 }) => {
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  
+  // Parse premium info using utility
+  const premiumInfo = parsePremiumInfo(user);
+  const isPremium = premiumInfo?.isPremium;
+  const isPremiumActive = premiumInfo?.isPremium && !premiumInfo?.isExpired;
+  
+  // Debug log để kiểm tra data
+  if (isPremium) {
+    console.log('Premium User Debug:', {
+      username: user.username,
+      subscriptionType: user.subscriptionType,
+      premiumEndDate: user.premiumEndDate,
+      daysRemaining: user.daysRemaining,
+      premiumInfo,
+      isPremiumActive
+    });
+  }
+  
   return (
-    <tr className="hover:bg-gray-50 transition-colors">
+    <tr className={`hover:bg-gray-50 transition-colors ${isPremium ? 'bg-yellow-50/30' : ''}`}>
       <td className="px-6 py-4">
         <input
           type="checkbox"
@@ -36,16 +65,30 @@ const UserTableRow = ({
       </td>
       <td className="px-6 py-4">
         <div className="flex items-center">
-          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mr-3">
+          <div className="relative w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mr-3">
             {user.avatar ? (
               <img src={user.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
             ) : (
               <User className="text-gray-400" size={20} />
             )}
+            {/* Premium Crown Badge */}
+            {isPremiumActive && (
+              <div className="absolute -top-1 -right-1 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full p-1 shadow-lg border-2 border-white">
+                <Crown className="text-white" size={10} />
+              </div>
+            )}
           </div>
           <div>
-            <div className="text-sm font-medium text-gray-900">
-              {user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim()}
+            <div className="flex items-center gap-2">
+              <div className="text-sm font-medium text-gray-900">
+                {user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim()}
+              </div>
+              {isPremiumActive && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 shadow-sm">
+                  <Crown size={10} />
+                  PREMIUM
+                </span>
+              )}
             </div>
             <div className="text-sm text-gray-500">@{user.username}</div>
             {user.userCode && (
@@ -74,9 +117,46 @@ const UserTableRow = ({
         </span>
       </td>
       <td className="px-6 py-4">
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(user.isUserEnabled)}`}>
-          {getStatusText(user.isUserEnabled)}
-        </span>
+        <div className="space-y-1">
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(user.isUserEnabled)}`}>
+            {getStatusText(user.isUserEnabled)}
+          </span>
+          
+          {/* Premium Status */}
+          {isPremium && premiumInfo && (
+            <div className="flex flex-col gap-1 mt-2">
+              {/* Subscription Badge */}
+              {premiumInfo.subscriptionType && premiumInfo.subscriptionType !== 'FREE' && (
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${getSubscriptionBadge(premiumInfo.subscriptionType).className}`}>
+                  <span>{getSubscriptionBadge(premiumInfo.subscriptionType).icon}</span>
+                  {getSubscriptionShortLabel(premiumInfo.subscriptionType)}
+                </span>
+              )}
+              
+              {/* Expiry Status */}
+              {premiumInfo.daysRemaining > 0 ? (
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getExpiryStatusBadge(premiumInfo.daysRemaining).className}`}>
+                  <span>{getExpiryStatusBadge(premiumInfo.daysRemaining).icon}</span>
+                  {getExpiryStatusBadge(premiumInfo.daysRemaining).text}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                  <Crown size={10} />
+                  Đã hết hạn
+                </span>
+              )}
+              
+              {/* View Details Button */}
+              <button
+                onClick={() => setShowPremiumModal(true)}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition-colors"
+              >
+                <Info size={10} />
+                Chi tiết
+              </button>
+            </div>
+          )}
+        </div>
       </td>
       <td className="px-6 py-4 text-sm text-gray-900">
         <div className="flex items-center gap-1">
@@ -131,7 +211,12 @@ const UserTableRow = ({
           </button>
         </div>
       </td>
-    </tr>
+      {/* Premium Detail Modal */}
+      <PremiumDetailModal 
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        user={user}
+      />    </tr>
   );
 };
 

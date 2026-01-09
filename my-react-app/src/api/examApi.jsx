@@ -44,6 +44,15 @@ const examApi = {
     return axiosClient.delete(`/admin/exams/${examId}`);
   },
 
+  /**
+   * Cập nhật trạng thái Lock/Unlock bài thi (Premium Only)
+   * @param {number|string} examId 
+   * @param {boolean} isLocked - true = chỉ Premium, false = public
+   */
+  updateExamLockStatus: (examId, isLocked) => {
+    return axiosClient.put(`/admin/exams/${examId}`, { isLocked });
+  },
+
   // ========== QUẢN LÝ PARTS (PHẦN THI) ==========
   
   /**

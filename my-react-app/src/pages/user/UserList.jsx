@@ -20,6 +20,10 @@ const UserList = () => {
     setFilterRole,
     filterStatus,
     setFilterStatus,
+    filterPremium,
+    setFilterPremium,
+    filterPremiumType,
+    setFilterPremiumType,
     users,
     loading,
     selectedUsers,
@@ -99,6 +103,10 @@ const UserList = () => {
         setFilterRole={setFilterRole}
         filterStatus={filterStatus}
         setFilterStatus={setFilterStatus}
+        filterPremium={filterPremium}
+        setFilterPremium={setFilterPremium}
+        filterPremiumType={filterPremiumType}
+        setFilterPremiumType={setFilterPremiumType}
         pageSize={pageSize}
         handlePageSizeChange={handlePageSizeChange}
         selectedUsers={selectedUsers}

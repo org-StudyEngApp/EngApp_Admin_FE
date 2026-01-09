@@ -1,4 +1,4 @@
-import axiosClient, { axiosClientForCrawl } from './axiosClient';
+import axiosClient, { axiosClientForCrawl, axiosClientForTranslation } from './axiosClient';
 
 const articleApi = {
   // ==================== UTILITY APIs ====================
@@ -49,6 +49,15 @@ const articleApi = {
     return axiosClient.delete(`/admin/articles/${id}`);
   },
 
+  /**
+   * Cập nhật trạng thái Lock/Unlock bài báo (Premium Only)
+   * @param {number|string} id 
+   * @param {boolean} isLocked - true = chỉ Premium, false = public
+   */
+  updateArticleLockStatus: (id, isLocked) => {
+    return axiosClient.put(`/admin/articles/${id}`, { isLocked });
+  },
+
   // ==================== STATUS MANAGEMENT APIs ====================
   
   // Publish ngay lập tức
@@ -94,6 +103,25 @@ const articleApi = {
   // Lấy chi tiết bài PUBLISHED (cho User)
   getPublishedArticleById: (id) => {
     return axiosClient.get(`/articles/${id}`);
+  },
+
+  // ==================== TRANSLATION APIs ====================
+  
+  // Admin dịch trước bài báo và lưu vào database (FREE cho tất cả user)
+  // Sử dụng axiosClientForTranslation với timeout cao (90s) cho Gemini API
+  translateArticle: (articleId) => {
+    return axiosClientForTranslation.post(`/admin/articles/${articleId}/translate`);
+  },
+
+  // User lấy bản dịch có sẵn từ database (FREE - không tốn quota)
+  getStoredTranslation: (articleId) => {
+    return axiosClient.get(`/articles/${articleId}/translation/stored`);
+  },
+
+  // User dịch bằng AI (Giới hạn 10 lần/ngày cho free user)
+  // Sử dụng axiosClientForTranslation với timeout cao (90s)
+  getAiTranslation: (articleId) => {
+    return axiosClientForTranslation.post(`/articles/${articleId}/translation/ai`);
   },
 
   // ==================== LEGACY SUPPORT ====================

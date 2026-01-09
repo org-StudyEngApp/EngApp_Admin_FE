@@ -17,6 +17,7 @@
     "antd": "^5.27.6",
     "axios": "^1.12.2",
     "chart.js": "^4.5.1",
+    "lodash": "^4.17.21",
     "lucide-react": "^0.548.0",
     "react": "^19.1.1",
     "react-chartjs-2": "^5.3.1",

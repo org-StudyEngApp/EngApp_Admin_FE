@@ -12,7 +12,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
-  Send
+  Send,
+  Lock,
+  Unlock
 } from 'lucide-react';
 import articleApi from '../../api/articleApi';
 import topicApi from '../../api/topicApi';
@@ -47,7 +49,8 @@ const ArticleEditor = () => {
     summary: '',
     sourceUrl: '',
     status: 'DRAFT', // DRAFT, SCHEDULED, PUBLISHED
-    scheduledPublishDate: '' // ISO DateTime string
+    scheduledPublishDate: '', // ISO DateTime string
+    isLocked: false // Default: public (tất cả truy cập được)
   });
 
   const [errors, setErrors] = useState({});
@@ -93,7 +96,8 @@ const ArticleEditor = () => {
         summary: article.summary || '',
         sourceUrl: article.sourceUrl || '',
         status: article.status || 'DRAFT',
-        scheduledPublishDate: article.scheduledPublishDate || ''
+        scheduledPublishDate: article.scheduledPublishDate || '',
+        isLocked: article.isLocked || false // Load lock status
       });
       setStep(2); // Skip to edit form
     } catch (error) {
@@ -217,7 +221,8 @@ const ArticleEditor = () => {
         newsSeriesId: null, // Optional
         orderIndex: 1, // Default value
         status: formData.status || 'DRAFT', // Thêm status
-        scheduledPublishDate: formData.scheduledPublishDate || null // Thêm scheduledPublishDate
+        scheduledPublishDate: formData.scheduledPublishDate || null, // Thêm scheduledPublishDate
+        isLocked: formData.isLocked || false // Thêm lock status
       };
 
       console.log('Payload being sent:', payload); // Debug log
@@ -621,6 +626,47 @@ const ArticleEditor = () => {
                     <p className="text-red-500 text-sm mt-1">{errors.level}</p>
                   )}
                 </div>
+              </div>
+
+              {/* Lock Status - Premium Only */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Quyền truy cập
+                </label>
+                <button
+                  type="button"
+                  onClick={() => handleInputChange('isLocked', !formData.isLocked)}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border-2 transition-all ${
+                    formData.isLocked
+                      ? 'border-yellow-400 bg-gradient-to-r from-yellow-50 to-yellow-100'
+                      : 'border-green-400 bg-gradient-to-r from-green-50 to-green-100'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    {formData.isLocked ? (
+                      <>
+                        <div className="p-2 bg-yellow-200 rounded-lg">
+                          <Lock size={20} className="text-yellow-800" />
+                        </div>
+                        <div className="text-left">
+                          <div className="font-semibold text-yellow-900">🔒 Premium Only</div>
+                          <div className="text-xs text-yellow-700">Chỉ Premium users truy cập</div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="p-2 bg-green-200 rounded-lg">
+                          <Unlock size={20} className="text-green-800" />
+                        </div>
+                        <div className="text-left">
+                          <div className="font-semibold text-green-900">🔓 Public</div>
+                          <div className="text-xs text-green-700">Tất cả users truy cập được</div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500">Click để thay đổi</div>
+                </button>
               </div>
 
               {/* Scheduled Publish Date - chỉ hiện khi muốn lên lịch */}

@@ -19,6 +19,7 @@ import {
   FolderOpen, // Icon cho Topics
   TrendingUp, // Icon cho Analytics/Results
   Search, // Icon cho Search
+  DollarSign, // Icon cho Payment Management
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -154,6 +155,12 @@ const Sidebar = () => {
           path: "/admin/exam-results/search",
         },
       ],
+    },
+    {
+      title: "Quản lý thanh toán",
+      icon: <DollarSign size={20} />,
+      path: "/admin/payments",
+      permissions: ["ADMIN"]
     },
     {
       title: "Cài đặt",

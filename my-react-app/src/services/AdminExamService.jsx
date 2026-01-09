@@ -79,6 +79,23 @@ const AdminExamService = {
     }
   },
 
+  /**
+   * Cập nhật trạng thái Lock/Unlock bài thi (Premium Only)
+   * @param {number|string} examId 
+   * @param {boolean} isLocked - true = chỉ Premium, false = public
+   */
+  updateExamLockStatus: async (examId, isLocked) => {
+    try {
+      console.log('Updating exam lock status:', examId, isLocked);
+      const response = await examApi.updateExamLockStatus(examId, isLocked);
+      console.log('Update lock status response:', response);
+      return response;
+    } catch (error) {
+      console.error('Error updating lock status:', error);
+      throw error;
+    }
+  },
+
   // ========== QUẢN LÝ PARTS (PHẦN THI) ==========
   
   /**

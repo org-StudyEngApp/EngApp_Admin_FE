@@ -36,6 +36,9 @@ import TopicManager from "./pages/Admin/TopicManager";
 import ExamResultsDashboard from "./pages/Admin/ExamResultsDashboard";
 import ExamResultsSearch from "./pages/Admin/ExamResultsSearch";
 
+// Import Payment Management component
+import PaymentManagement from "./pages/Admin/PaymentManagement";
+
 
 
 function App() {
@@ -270,6 +273,16 @@ function App() {
           element={
             <AdminLayout title="Search Exam Results">
               <ExamResultsSearch />
+            </AdminLayout>
+          }
+        />
+
+        {/* Payment Management Route */}
+        <Route
+          path="/admin/payments"
+          element={
+            <AdminLayout title="Quản lý thanh toán">
+              <PaymentManagement />
             </AdminLayout>
           }
         />

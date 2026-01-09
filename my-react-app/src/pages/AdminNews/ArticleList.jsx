@@ -14,10 +14,15 @@ import {
   Newspaper,
   BookOpen,
   Clock,
-  Send
+  Send,
+  Languages,
+  CheckCheck,
+  Lock,
+  Unlock
 } from 'lucide-react';
 import articleApi from '../../api/articleApi';
 import topicApi from '../../api/topicApi';
+import TranslationViewerModal from '../../components/AdminNews/TranslationViewerModal';
 
 const ArticleList = () => {
   const navigate = useNavigate();
@@ -28,6 +33,8 @@ const ArticleList = () => {
   const [filterTopic, setFilterTopic] = useState('');
   const [filterStatus, setFilterStatus] = useState(''); // Thêm filter status
   const [topics, setTopics] = useState([]);
+  const [translatingArticles, setTranslatingArticles] = useState(new Set()); // Track articles đang dịch
+  const [viewTranslationModal, setViewTranslationModal] = useState({ isOpen: false, article: null }); // Modal xem bản dịch
   const [pagination, setPagination] = useState({
     page: 0,
     size: 10,
@@ -76,20 +83,40 @@ const ArticleList = () => {
       const response = await articleApi.getAllArticles(params);
       const data = response.data || response.result || response;
       
-      console.log('📰 Articles loaded:', data);
-      console.log('📊 First article:', data.content?.[0]);
+      // Debug: Kiểm tra xem backend có trả về isLocked không
+      console.log('📋 Sample article from backend:', (data.content || data.data || data || [])[0]);
       
-      // Map topic names to articles
+      // Map topic names to articles - GIỮ NGUYÊN TẤT CẢ FIELDS từ backend
       const articlesWithTopics = (data.content || data.data || data || []).map(article => {
         // Tìm topic name từ danh sách topics
         const topic = topics.find(t => t.id === article.newsTopicId);
+        
+        // Backend có thể trả về snake_case hoặc camelCase
+        let vietnameseTranslation = article.vietnameseTranslation || article.vietnamese_translation || null;
+        
+        // Kiểm tra nested paths nếu cần
+        if (!vietnameseTranslation && article.data) {
+          vietnameseTranslation = article.data.vietnameseTranslation || article.data.vietnamese_translation;
+        }
+        
         return {
-          ...article,
-          topicName: topic?.title || topic?.name || article.newsTopicName || article.topicTitle || 'Chưa có chủ đề'
+          ...article, // Giữ TOÀN BỘ fields từ backend
+          vietnameseTranslation, // Đảm bảo có field này (chuẩn hóa)
+          topicName: topic?.title || topic?.name || article.newsTopicName || article.topicTitle || 'Chưa có chủ đề',
+          isLocked: article.isLocked !== undefined ? article.isLocked : false // Đảm bảo có isLocked
         };
       });
       
       setArticles(articlesWithTopics);
+      
+      // *** DISABLED: Translation loading để tránh lỗi 404 ***
+      // Backend chưa implement endpoint getStoredTranslation
+      // Nếu không có translation trong response, load riêng
+      // const articlesWithoutTranslation = articlesWithTopics.filter(a => !a.vietnameseTranslation);
+      // if (articlesWithoutTranslation.length > 0) {
+      //   loadTranslationsForArticles(articlesWithTopics);
+      // }
+      
       setPagination(prev => ({
         ...prev,
         totalElements: data.totalElements || 0,
@@ -105,6 +132,41 @@ const ArticleList = () => {
   const handleSearch = () => {
     setPagination({ ...pagination, page: 0 });
     loadArticles();
+  };
+
+  // Load translations riêng cho các articles
+  const loadTranslationsForArticles = async (articles) => {
+    // Chỉ check những bài có khả năng đã được dịch
+    const articlesToCheck = articles.slice(0, 10);
+    
+    const translationPromises = articlesToCheck.map(async (article) => {
+      try {
+        const response = await articleApi.getStoredTranslation(article.id);
+        const data = response.data || response.result || response;
+        const translation = data.vietnameseTranslation || data.vietnamese_translation;
+        
+        if (translation) {
+          return { id: article.id, translation };
+        }
+      } catch (error) {
+        // Nếu 404 (chưa có dịch) thì bỏ qua
+      }
+      return null;
+    });
+    
+    const results = await Promise.allSettled(translationPromises);
+    const translations = results
+      .filter(r => r.status === 'fulfilled' && r.value)
+      .map(r => r.value);
+    
+    if (translations.length > 0) {
+      setArticles(prevArticles =>
+        prevArticles.map(article => {
+          const found = translations.find(t => t.id === article.id);
+          return found ? { ...article, vietnameseTranslation: found.translation } : article;
+        })
+      );
+    }
   };
 
   const handleDelete = async (id) => {
@@ -164,6 +226,139 @@ const ArticleList = () => {
   const showSuccessMessage = (message) => {
     // Có thể thêm toast notification ở đây
     console.log(message);
+  };
+
+  const handleToggleLockStatus = async (articleId, currentLockStatus) => {
+    const newLockStatus = !currentLockStatus;
+    const confirmMessage = newLockStatus
+      ? '🔒 KHÓA BÀI BÁO - CHỈ PREMIUM\n\nBài báo sẽ chỉ có thể truy cập bởi:\n• Người dùng Premium\n• Người dùng Free được Admin grant quyền\n\nBạn có chắc chắn?'
+      : '🔓 MỞ KHÓA BÀI BÁO - PUBLIC\n\nBài báo sẽ công khai cho tất cả người dùng (kể cả FREE).\n\nBạn có chắc chắn?';
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      // Tìm article trong state để lấy full data
+      const article = articles.find(a => a.id === articleId);
+      if (!article) {
+        alert('Không tìm thấy bài báo');
+        return;
+      }
+
+      // Tạo payload full với tất cả fields bắt buộc
+      const payload = {
+        title: article.title,
+        htmlContent: article.htmlContent || article.content || '',
+        level: article.level,
+        newsTopicId: article.newsTopicId || article.topicId,
+        sourceUrl: article.sourceUrl || '',
+        audioUrl: article.audioUrl || '',
+        thumbnailUrl: article.thumbnailUrl || article.mainImageUrl || '',
+        summary: article.summary || '',
+        isTrial: false,
+        newsSeriesId: null,
+        orderIndex: 1,
+        status: article.status || 'DRAFT',
+        scheduledPublishDate: article.scheduledPublishDate || null,
+        isLocked: newLockStatus // Update lock status
+      };
+
+      // Gọi updateArticle với full payload
+      await articleApi.updateArticle(articleId, payload);
+      
+      setArticles(articles.map(a =>
+        a.id === articleId ? { ...a, isLocked: newLockStatus } : a
+      ));
+      alert(newLockStatus ? '✅ Đã khóa bài báo - Chỉ Premium truy cập được!' : '✅ Đã mở khóa bài báo - Công khai cho tất cả!');
+    } catch (error) {
+      console.error('Error toggling lock status:', error);
+      const errorMsg = error.response?.data?.message || error.message;
+      alert('Có lỗi xảy ra khi thay đổi trạng thái lock: ' + errorMsg);
+    }
+  };
+
+  const handleTranslate = async (article) => {
+    if (!window.confirm(
+      `🌐 DỊCH BÀI VIẾT?
+
+` +
+      `📄 Bài: ${article.title}
+
+` +
+      `✅ Dịch bằng AI (Gemini)
+` +
+      `💾 Lưu vào database
+` +
+      `🆓 MIỄN PHÍ cho tất cả user
+` +
+      `⏱️ Có thể mất 30-60 giây
+
+` +
+      `Xác nhận dịch bài này?`
+    )) {
+      return;
+    }
+
+    setTranslatingArticles(prev => new Set([...prev, article.id]));
+
+    try {
+      const response = await articleApi.translateArticle(article.id);
+      const data = response.data || response.result || response;
+      
+      // Backend có thể trả về nhiều format khác nhau
+      const translationContent = 
+        data.vietnameseTranslation || 
+        data.vietnamese_translation ||
+        data.data?.vietnameseTranslation || 
+        data.data?.vietnamese_translation ||
+        null;
+      
+      // Cập nhật article trong list với translation mới
+      setArticles(prevArticles => 
+        prevArticles.map(a => 
+          a.id === article.id 
+            ? { ...a, vietnameseTranslation: translationContent }
+            : a
+        )
+      );
+      
+      alert(
+        `✅ DỊCH THÀNH CÔNG!
+
+` +
+        `📰 Bài: ${article.title}
+` +
+        `💾 Đã lưu bản dịch vào database
+` +
+        `🆓 User có thể xem MIỄN PHÍ
+
+` +
+        `${data.quotaMessage || 'Pre-translated by admin - Free for all users'}`
+      );
+      
+      // Reload lại danh sách để đồng bộ dữ liệu từ backend
+      await loadArticles();
+    } catch (error) {
+      console.error('❌ Lỗi dịch bài viết:', error);
+      let errorMsg = 'Không thể dịch bài viết. Vui lòng thử lại!';
+      
+      if (error.code === 'ECONNABORTED') {
+        errorMsg = '⏱️ Timeout: Bài viết quá dài, vui lòng thử lại hoặc liên hệ admin.';
+      } else if (error.response?.data?.message) {
+        errorMsg = error.response.data.message;
+      }
+      
+      alert(`❌ DỊCH THẤT BẠI
+
+${errorMsg}`);
+    } finally {
+      setTranslatingArticles(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(article.id);
+        return newSet;
+      });
+    }
   };
 
   const getStatusBadge = (article) => {
@@ -246,6 +441,45 @@ const ArticleList = () => {
           Tạo bài mới
         </button>
       </div>
+
+      {/* Translation Statistics */}
+      {articles.length > 0 && (
+        <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg shadow-sm p-4 mb-6 border border-indigo-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <Languages size={24} className="text-indigo-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">Thống kê Dịch thuật</h3>
+                <p className="text-xs text-gray-600">Admin dịch trước → Free cho User</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {articles.filter(a => a.vietnameseTranslation).length}
+                </div>
+                <div className="text-xs text-gray-600">Đã dịch</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">
+                  {articles.filter(a => !a.vietnameseTranslation).length}
+                </div>
+                <div className="text-xs text-gray-600">Chưa dịch</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-indigo-600">
+                  {articles.length > 0 
+                    ? Math.round((articles.filter(a => a.vietnameseTranslation).length / articles.length) * 100)
+                    : 0}%
+                </div>
+                <div className="text-xs text-gray-600">Hoàn thành</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-md p-4 mb-6">
@@ -331,6 +565,13 @@ const ArticleList = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Trạng thái
                   </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Quyền truy cập
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <Languages size={14} className="inline-block mr-1" />
+                    Dịch thuật
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Ngày tạo
                   </th>
@@ -394,6 +635,46 @@ const ArticleList = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(article)}
                     </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleToggleLockStatus(article.id, article.isLocked)}
+                          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                            article.isLocked
+                              ? 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 hover:from-yellow-200 hover:to-yellow-300 border border-yellow-300'
+                              : 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 hover:from-green-200 hover:to-green-300 border border-green-300'
+                          }`}
+                          title={article.isLocked ? 'Đang khóa - Chỉ Premium truy cập' : 'Công khai - Tất cả truy cập được'}
+                        >
+                          {article.isLocked ? (
+                            <>
+                              <Lock size={12} />
+                              <span className="font-semibold">Premium Only</span>
+                            </>
+                          ) : (
+                            <>
+                              <Unlock size={12} />
+                              <span>Public</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center justify-center">
+                        {article.vietnameseTranslation ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                            <CheckCheck size={14} />
+                            Đã dịch
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
+                            <XCircle size={14} />
+                            Chưa dịch
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(article.createdAt).toLocaleDateString('vi-VN')}
                     </td>
@@ -425,6 +706,37 @@ const ArticleList = () => {
                             title="Xuất bản ngay hoặc hủy lịch"
                           >
                             <Clock size={18} />
+                          </button>
+                        )}
+                        
+                        {/* Translation Button */}
+                        <button
+                          onClick={() => handleTranslate(article)}
+                          disabled={translatingArticles.has(article.id)}
+                          className={`relative ${
+                            article.vietnameseTranslation 
+                              ? 'text-green-600 hover:text-green-900' 
+                              : 'text-indigo-600 hover:text-indigo-900'
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                          title={article.vietnameseTranslation ? 'Đã dịch - Click để dịch lại' : 'Dịch bài viết'}
+                        >
+                          {translatingArticles.has(article.id) ? (
+                            <Loader2 size={18} className="animate-spin" />
+                          ) : article.vietnameseTranslation ? (
+                            <CheckCheck size={18} />
+                          ) : (
+                            <Languages size={18} />
+                          )}
+                        </button>
+                        
+                        {/* View Translation Button - Chỉ hiển thị nếu đã dịch */}
+                        {article.vietnameseTranslation && (
+                          <button
+                            onClick={() => setViewTranslationModal({ isOpen: true, article })}
+                            className="text-blue-600 hover:text-blue-900"
+                            title="Xem bản dịch"
+                          >
+                            <Eye size={18} />
                           </button>
                         )}
                         
@@ -484,6 +796,13 @@ const ArticleList = () => {
           </>
         )}
       </div>
+
+      {/* Translation Viewer Modal */}
+      <TranslationViewerModal
+        article={viewTranslationModal.article}
+        isOpen={viewTranslationModal.isOpen}
+        onClose={() => setViewTranslationModal({ isOpen: false, article: null })}
+      />
     </div>
   );
 };
